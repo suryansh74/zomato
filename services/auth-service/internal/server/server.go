@@ -7,20 +7,27 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/suryansh74/zomato/services/auth-service/internal/config"
+	"github.com/suryansh74/zomato/services/auth-service/internal/token"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 )
 
 type Server struct {
-	cfg    *config.Config
-	router *chi.Mux
-	client *mongo.Client
+	cfg        *config.Config
+	router     *chi.Mux
+	client     *mongo.Client
+	tokenMaker token.Maker
 }
 
 func NewServer(cfg *config.Config, client *mongo.Client) *Server {
+	tokenMaker, err := token.NewPasetoMaker(cfg.TokenSymmetricKey)
+	if err != nil {
+		panic(err)
+	}
 	return &Server{
-		cfg:    cfg,
-		router: chi.NewRouter(),
-		client: client,
+		cfg:        cfg,
+		router:     chi.NewRouter(),
+		client:     client,
+		tokenMaker: tokenMaker,
 	}
 }
 

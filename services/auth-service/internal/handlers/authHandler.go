@@ -3,22 +3,28 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
+	"time"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/suryansh74/zomato/services/auth-service/internal/models"
-	"github.com/suryansh74/zomato/services/auth-service/internal/serivces" // ✅ v2, not v1
+	"github.com/suryansh74/zomato/services/auth-service/internal/serivces"
+	"github.com/suryansh74/zomato/services/auth-service/internal/token"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 )
 
 var validate = validator.New()
 
 type AuthHandler struct {
-	srv *serivces.AuthService
+	tokenMaker          token.Maker
+	accessTokenDuration time.Duration
+	srv                 *serivces.AuthService
 }
 
-func NewAuthHandler(srv *serivces.AuthService, client *mongo.Client, dbName, collectionName string) *AuthHandler {
+func NewAuthHandler(srv *serivces.AuthService, client *mongo.Client, dbName, collectionName string, tokenMaker token.Maker, accessTokenDuration time.Duration) *AuthHandler {
 	return &AuthHandler{
-		srv: srv,
+		srv:                 srv,
+		tokenMaker:          tokenMaker,
+		accessTokenDuration: accessTokenDuration,
 	}
 }
 
@@ -58,8 +64,23 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeJSON(w, http.StatusOK, user)
+	token, err := h.tokenMaker.CreateToken(user, h.accessTokenDuration)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]any{
+		"message": "login successfull",
+		"token":   token,
+		"user":    user,
+	})
 }
+
+// helper functions
+// ================================================================================
 
 func writeJSON(w http.ResponseWriter, status int, data any) {
 	responseBody := map[string]any{
