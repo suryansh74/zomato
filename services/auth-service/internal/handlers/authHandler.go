@@ -1,44 +1,40 @@
 package handlers
 
 import (
-	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/suryansh74/zomato/services/auth-service/internal/models"
-	"go.mongodb.org/mongo-driver/v2/bson" // ✅ v2, not v1
+	"github.com/suryansh74/zomato/services/auth-service/internal/serivces" // ✅ v2, not v1
 	"go.mongodb.org/mongo-driver/v2/mongo"
 )
 
 var validate = validator.New()
 
 type AuthHandler struct {
-	client         *mongo.Client
-	dbName         string
-	collectionName string
+	srv *serivces.AuthService
 }
 
-func NewAuthHandler(client *mongo.Client, dbName, collectionName string) *AuthHandler {
+func NewAuthHandler(srv *serivces.AuthService, client *mongo.Client, dbName, collectionName string) *AuthHandler {
 	return &AuthHandler{
-		client:         client,
-		dbName:         dbName,
-		collectionName: collectionName,
+		srv: srv,
 	}
 }
 
+// CheckHealth checks the health of the api
+// ================================================================================
 func (h *AuthHandler) CheckHealth(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]string{
 		"message": "auth-service is healthy",
 	})
 }
 
+// Login user
+// ================================================================================
 func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	// getting incoming req body
 	var req models.LoginRequest
-
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		writeJSON(w, http.StatusBadRequest, map[string]string{
 			"error": "invalid request body",
@@ -46,6 +42,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// validate user
 	if err := validate.Struct(req); err != nil {
 		writeJSON(w, http.StatusUnprocessableEntity, map[string]any{
 			"errors": err.Error(),
@@ -53,50 +50,15 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// check email existance
-	coll := h.client.Database(h.dbName).Collection(h.collectionName)
-
-	var result bson.M
-	err := coll.FindOne(r.Context(), bson.D{{Key: "email", Value: req.Email}}).Decode(&result)
-	if err == mongo.ErrNoDocuments {
-
-		// if user doesn't exist make record for it
-		newUser := &models.User{
-			Name:  req.Name,
-			Email: req.Email,
-			Image: req.Image,
-			// Role:      "customer",
-			CreatedAt: time.Now(),
-			UpdatedAt: time.Now(),
-		}
-		result, err := coll.InsertOne(context.TODO(), newUser)
-		if err != nil {
-			writeJSON(w, http.StatusInternalServerError, map[string]string{
-				"error": "something went wrong",
-			})
-			return
-		}
-
-		fmt.Printf("Inserted document with _id: %v\n", result.InsertedID)
-		writeJSON(w, http.StatusOK, map[string]any{
-			"message": "login successful",
-			"user":    result,
-		})
-		return
-	}
-
-	// user already existed
-	writeJSON(w, http.StatusOK, map[string]any{
-		"message": "login successful",
-		"user":    result,
-	})
-
+	user, err := h.srv.LoginOrCreate(&req)
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, map[string]string{
-			"error": "something went wrong",
+			"error": err.Error(),
 		})
 		return
 	}
+
+	writeJSON(w, http.StatusOK, user)
 }
 
 func writeJSON(w http.ResponseWriter, status int, data any) {
