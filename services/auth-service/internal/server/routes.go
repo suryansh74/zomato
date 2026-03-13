@@ -3,7 +3,7 @@ package server
 import (
 	"github.com/suryansh74/zomato/services/auth-service/internal/handlers"
 	"github.com/suryansh74/zomato/services/auth-service/internal/repositories"
-	services "github.com/suryansh74/zomato/services/auth-service/internal/serivces"
+	services "github.com/suryansh74/zomato/services/auth-service/internal/services"
 )
 
 func (s *Server) setupRoutes() {

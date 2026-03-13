@@ -7,7 +7,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/suryansh74/zomato/services/auth-service/internal/models"
-	services "github.com/suryansh74/zomato/services/auth-service/internal/serivces"
+	services "github.com/suryansh74/zomato/services/auth-service/internal/services"
 	"github.com/suryansh74/zomato/services/auth-service/internal/token"
 )
 
