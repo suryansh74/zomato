@@ -10,7 +10,7 @@ func (s *Server) setupRoutes() {
 	// handlers are created here and passed into routes
 	authRepository := repositories.NewAuthRepository(s.client, s.cfg.DBName, s.cfg.CollectionName)
 	authService := services.NewAuthService(authRepository)
-	authHandler := handlers.NewAuthHandler(authService, s.client, s.cfg.DBName, s.cfg.CollectionName, s.tokenMaker, s.cfg.AccessTokenDuration)
+	authHandler := handlers.NewAuthHandler(authService, s.tokenMaker, s.cfg.AccessTokenDuration)
 
 	// health check
 	s.router.Get("/api/health", authHandler.CheckHealth)

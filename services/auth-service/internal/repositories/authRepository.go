@@ -12,8 +12,8 @@ import (
 )
 
 type AuthRepository interface {
-	FindByEmail(email string) (bson.M, error)
-	Create(LoginRequest *models.LoginRequest) (*mongo.InsertOneResult, error)
+	FindByEmail(ctx context.Context, email string) (bson.M, error)
+	Create(ctx context.Context, LoginRequest *models.LoginRequest) (*mongo.InsertOneResult, error)
 }
 
 type authRepository struct {
@@ -30,7 +30,7 @@ func NewAuthRepository(db *mongo.Client, dbName, collectionName string) AuthRepo
 	}
 }
 
-func (r *authRepository) FindByEmail(email string) (bson.M, error) {
+func (r *authRepository) FindByEmail(ctx context.Context, email string) (bson.M, error) {
 	coll := r.db.Database(r.dbName).Collection(r.collectionName)
 	var result bson.M
 	err := coll.FindOne(context.Background(), bson.D{{Key: "email", Value: email}}).Decode(&result)
@@ -43,7 +43,7 @@ func (r *authRepository) FindByEmail(email string) (bson.M, error) {
 	return result, nil
 }
 
-func (r *authRepository) Create(LoginRequest *models.LoginRequest) (*mongo.InsertOneResult, error) {
+func (r *authRepository) Create(ctx context.Context, LoginRequest *models.LoginRequest) (*mongo.InsertOneResult, error) {
 	newUser := &models.User{
 		Name:  LoginRequest.Name,
 		Email: LoginRequest.Email,

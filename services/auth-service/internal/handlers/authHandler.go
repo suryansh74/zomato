@@ -9,7 +9,6 @@ import (
 	"github.com/suryansh74/zomato/services/auth-service/internal/models"
 	services "github.com/suryansh74/zomato/services/auth-service/internal/serivces"
 	"github.com/suryansh74/zomato/services/auth-service/internal/token"
-	"go.mongodb.org/mongo-driver/v2/mongo"
 )
 
 var validate = validator.New()
@@ -20,7 +19,7 @@ type AuthHandler struct {
 	srv                 *services.AuthService
 }
 
-func NewAuthHandler(srv *services.AuthService, client *mongo.Client, dbName, collectionName string, tokenMaker token.Maker, accessTokenDuration time.Duration) *AuthHandler {
+func NewAuthHandler(srv *services.AuthService, tokenMaker token.Maker, accessTokenDuration time.Duration) *AuthHandler {
 	return &AuthHandler{
 		srv:                 srv,
 		tokenMaker:          tokenMaker,
@@ -56,7 +55,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := h.srv.LoginOrCreate(&req)
+	user, err := h.srv.LoginOrCreate(r.Context(), &req)
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, map[string]string{
 			"error": err.Error(),
