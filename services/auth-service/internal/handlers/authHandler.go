@@ -7,7 +7,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/suryansh74/zomato/services/auth-service/internal/models"
-	"github.com/suryansh74/zomato/services/auth-service/internal/serivces"
+	services "github.com/suryansh74/zomato/services/auth-service/internal/serivces"
 	"github.com/suryansh74/zomato/services/auth-service/internal/token"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 )
@@ -17,10 +17,10 @@ var validate = validator.New()
 type AuthHandler struct {
 	tokenMaker          token.Maker
 	accessTokenDuration time.Duration
-	srv                 *serivces.AuthService
+	srv                 *services.AuthService
 }
 
-func NewAuthHandler(srv *serivces.AuthService, client *mongo.Client, dbName, collectionName string, tokenMaker token.Maker, accessTokenDuration time.Duration) *AuthHandler {
+func NewAuthHandler(srv *services.AuthService, client *mongo.Client, dbName, collectionName string, tokenMaker token.Maker, accessTokenDuration time.Duration) *AuthHandler {
 	return &AuthHandler{
 		srv:                 srv,
 		tokenMaker:          tokenMaker,

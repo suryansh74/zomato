@@ -1,4 +1,4 @@
-package serivces
+package services
 
 import (
 	"github.com/suryansh74/zomato/services/auth-service/apperr"

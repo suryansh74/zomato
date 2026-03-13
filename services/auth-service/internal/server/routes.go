@@ -3,13 +3,13 @@ package server
 import (
 	"github.com/suryansh74/zomato/services/auth-service/internal/handlers"
 	"github.com/suryansh74/zomato/services/auth-service/internal/repositories"
-	"github.com/suryansh74/zomato/services/auth-service/internal/serivces"
+	services "github.com/suryansh74/zomato/services/auth-service/internal/serivces"
 )
 
 func (s *Server) setupRoutes() {
 	// handlers are created here and passed into routes
 	authRepository := repositories.NewAuthRepository(s.client, s.cfg.DBName, s.cfg.CollectionName)
-	authService := serivces.NewAuthService(authRepository)
+	authService := services.NewAuthService(authRepository)
 	authHandler := handlers.NewAuthHandler(authService, s.client, s.cfg.DBName, s.cfg.CollectionName, s.tokenMaker, s.cfg.AccessTokenDuration)
 
 	// health check
