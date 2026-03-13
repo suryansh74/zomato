@@ -10,7 +10,7 @@ import (
 )
 
 type Maker interface {
-	CreateToken(loginRequest *models.LoginRequest, duration time.Duration) (string, error)
+	CreateToken(user *models.TokenUser, duration time.Duration) (string, error)
 	VerifyToken(token string) (*Payload, error)
 }
 
@@ -31,12 +31,11 @@ func NewPasetoMaker(symmetricKey string) (Maker, error) {
 	return maker, nil
 }
 
-func (maker *PasetoMaker) CreateToken(loginRequest *models.LoginRequest, duration time.Duration) (string, error) {
-	payload, err := NewPayload(loginRequest, duration)
+func (maker *PasetoMaker) CreateToken(user *models.TokenUser, duration time.Duration) (string, error) {
+	payload, err := NewPayload(user, duration)
 	if err != nil {
 		return "", err
 	}
-
 	return maker.paseto.Encrypt(maker.symmetricKey, payload, nil)
 }
 

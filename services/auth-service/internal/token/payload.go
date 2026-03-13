@@ -1,4 +1,3 @@
-// Package token response for token functionality
 package token
 
 import (
@@ -13,18 +12,17 @@ var (
 	ErrExpiredToken = errors.New("token is expired")
 )
 
-// Payload contain payload data of token
 type Payload struct {
-	LoginRequest *models.LoginRequest `json:"user"`
-	IssuedAt     time.Time            `json:"issued_at"`
-	ExpiredAt    time.Time            `json:"expired_at"`
+	User      *models.TokenUser `json:"user"` // ✅ now has role
+	IssuedAt  time.Time         `json:"issued_at"`
+	ExpiredAt time.Time         `json:"expired_at"`
 }
 
-func NewPayload(LoginRequest *models.LoginRequest, duration time.Duration) (*Payload, error) {
+func NewPayload(user *models.TokenUser, duration time.Duration) (*Payload, error) {
 	return &Payload{
-		LoginRequest: LoginRequest,
-		IssuedAt:     time.Now(),
-		ExpiredAt:    time.Now().Add(duration),
+		User:      user,
+		IssuedAt:  time.Now(),
+		ExpiredAt: time.Now().Add(duration),
 	}, nil
 }
 

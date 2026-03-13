@@ -13,28 +13,29 @@ type AuthService struct {
 }
 
 func NewAuthService(repo repositories.AuthRepository) *AuthService {
-	return &AuthService{
-		repo: repo,
-	}
+	return &AuthService{repo: repo}
 }
 
-// LoginOrCreate if user already exists return user else create user
-// ================================================================
-func (a *AuthService) LoginOrCreate(ctx context.Context, LoginRequest *models.LoginRequest) (*models.LoginRequest, error) {
-	// check if user already exists
-	_, err := a.repo.FindByEmail(ctx, LoginRequest.Email)
-
-	// create user if not exists
+func (a *AuthService) LoginOrCreate(ctx context.Context, req *models.LoginRequest) (*models.User, error) {
+	user, err := a.repo.FindByEmail(ctx, req.Email)
 	if err == apperr.ErrUserNotFound {
-		_, err = a.repo.Create(ctx, LoginRequest)
-		if err != nil {
+		newUser := &models.User{
+			Name:  req.Name,
+			Email: req.Email,
+			Image: req.Image,
+		}
+		createdUser, createErr := a.repo.Create(ctx, newUser)
+		if createErr != nil {
 			return nil, apperr.ErrInternalServer
 		}
-		return LoginRequest, nil
+		return createdUser, nil
 	}
-
 	if err != nil {
 		return nil, apperr.ErrInternalServer
 	}
-	return LoginRequest, nil
+	return user, nil
+}
+
+func (a *AuthService) UpdateRole(ctx context.Context, role models.Role, email string) (*models.User, error) {
+	return a.repo.UpdateRole(ctx, role, email) // ✅ returns *models.User now
 }

@@ -2,7 +2,6 @@ package repositories
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/suryansh74/zomato/services/auth-service/apperr"
@@ -12,8 +11,9 @@ import (
 )
 
 type AuthRepository interface {
-	FindByEmail(ctx context.Context, email string) (bson.M, error)
-	Create(ctx context.Context, LoginRequest *models.LoginRequest) (*mongo.InsertOneResult, error)
+	FindByEmail(ctx context.Context, email string) (*models.User, error)
+	Create(ctx context.Context, user *models.User) (*models.User, error)
+	UpdateRole(ctx context.Context, role models.Role, email string) (*models.User, error) // ✅ returns *models.User now
 }
 
 type authRepository struct {
@@ -30,36 +30,36 @@ func NewAuthRepository(db *mongo.Client, dbName, collectionName string) AuthRepo
 	}
 }
 
-func (r *authRepository) FindByEmail(ctx context.Context, email string) (bson.M, error) {
+func (r *authRepository) FindByEmail(ctx context.Context, email string) (*models.User, error) {
 	coll := r.db.Database(r.dbName).Collection(r.collectionName)
-	var result bson.M
-	err := coll.FindOne(context.Background(), bson.D{{Key: "email", Value: email}}).Decode(&result)
+	var result models.User // ✅ decode into User struct directly
+	err := coll.FindOne(ctx, bson.D{{Key: "email", Value: email}}).Decode(&result)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			return nil, apperr.ErrUserNotFound
 		}
 		return nil, apperr.ErrInternalServer
 	}
-	return result, nil
+	return &result, nil
 }
 
-func (r *authRepository) Create(ctx context.Context, LoginRequest *models.LoginRequest) (*mongo.InsertOneResult, error) {
-	newUser := &models.User{
-		Name:  LoginRequest.Name,
-		Email: LoginRequest.Email,
-		Image: LoginRequest.Image,
-		// Role:      "customer",
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
-	}
-
+func (r *authRepository) Create(ctx context.Context, user *models.User) (*models.User, error) {
+	user.CreatedAt = time.Now()
+	user.UpdatedAt = time.Now()
 	coll := r.db.Database(r.dbName).Collection(r.collectionName)
-	result, err := coll.InsertOne(context.TODO(), newUser)
+	_, err := coll.InsertOne(ctx, user)
 	if err != nil {
 		return nil, apperr.ErrInternalServer
 	}
+	return user, nil
+}
 
-	fmt.Printf("Inserted document with _id: %v\n", result.InsertedID)
-
-	return result, nil
+func (r *authRepository) UpdateRole(ctx context.Context, role models.Role, email string) (*models.User, error) {
+	coll := r.db.Database(r.dbName).Collection(r.collectionName)
+	_, err := coll.UpdateOne(ctx, bson.M{"email": email}, bson.M{"$set": bson.M{"role": role.Role, "updated_at": time.Now()}})
+	if err != nil {
+		return nil, apperr.ErrInternalServer
+	}
+	// fetch updated user to return with new role
+	return r.FindByEmail(ctx, email)
 }
