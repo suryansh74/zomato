@@ -6,17 +6,28 @@ import (
 	"github.com/suryansh74/zomato/services/auth-service/internal/middleware"
 	"github.com/suryansh74/zomato/services/auth-service/internal/repositories"
 	services "github.com/suryansh74/zomato/services/auth-service/internal/services"
+	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/google"
 )
 
 func (s *Server) setupRoutes() {
+	oauthConfig := &oauth2.Config{
+		ClientID:     s.cfg.GoogleClientID,
+		ClientSecret: s.cfg.GoogleClientSecret,
+		RedirectURL:  s.cfg.GoogleRedirectURL,
+		Scopes:       []string{"email", "profile"},
+		Endpoint:     google.Endpoint,
+	}
+
 	// handlers are created here and passed into routes
 	authRepository := repositories.NewAuthRepository(s.client, s.cfg.DBName, s.cfg.CollectionName)
 	authService := services.NewAuthService(authRepository)
-	authHandler := handlers.NewAuthHandler(authService, s.tokenMaker, s.cfg.AccessTokenDuration)
+	authHandler := handlers.NewAuthHandler(authService, s.tokenMaker, s.cfg.AccessTokenDuration, oauthConfig)
 
 	// health check
 	s.router.Get("/api/health", authHandler.CheckHealth)
-	s.router.Post("/api/auth/login", authHandler.Login)
+	s.router.Get("/api/auth/login", authHandler.Login)
+	s.router.Get("/api/auth/google/callback", authHandler.GoogleCallback)
 
 	// protected route
 	s.router.Group(func(r chi.Router) {
