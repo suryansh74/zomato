@@ -7,29 +7,35 @@ import AuthProvider from "./context/AuthProvider";
 import ProtectedRoute from "./middleware/ProtectedRoute";
 import RoleProtectedRoute from "./middleware/RoleProtectedRoute";
 import PublicRoute from "./middleware/PublicRoute";
+import { Toaster } from "react-hot-toast";
+import { ThemeProvider } from "./components/theme-provider";
 
 export default function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          {/* public — anyone */}
-          <Route path="/" element={<Home />} />
-          <Route element={<PublicRoute />}>
-            <Route path="/login" element={<Login />} />
-          </Route>
+    <ThemeProvider>
+      <AuthProvider>
+        <BrowserRouter>
+          <Routes>
+            {/* public — anyone */}
+            <Route path="/" element={<Home />} />
+            <Route element={<PublicRoute />}>
+              <Route path="/login" element={<Login />} />
+            </Route>
 
-          {/* logged in but no role yet */}
-          <Route element={<ProtectedRoute />}>
-            <Route path="/select-role" element={<SelectRole />} />
-          </Route>
+            {/* logged in but no role yet */}
+            <Route element={<ProtectedRoute />}>
+              <Route path="/select-role" element={<SelectRole />} />
+            </Route>
 
-          {/* logged in AND has role */}
-          <Route element={<RoleProtectedRoute />}>
-            <Route path="/dashboard" element={<Dashboard />} />
-          </Route>
-        </Routes>
-      </BrowserRouter>
-    </AuthProvider>
+            {/* logged in AND has role */}
+            <Route element={<RoleProtectedRoute />}>
+              <Route path="/dashboard" element={<Dashboard />} />
+            </Route>
+          </Routes>
+
+          <Toaster />
+        </BrowserRouter>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }

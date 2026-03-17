@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { AuthContext, type User } from "./AuthContext";
+import type { User } from "../types/types";
+import { AuthContext } from "./AuthContext";
 
 export default function AuthProvider({
   children,
@@ -20,7 +21,7 @@ export default function AuthProvider({
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading }}>
+    <AuthContext.Provider value={{ user, setUser, loading }}>
       {children}
     </AuthContext.Provider>
   );

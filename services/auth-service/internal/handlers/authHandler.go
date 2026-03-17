@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"context"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -23,14 +22,16 @@ type AuthHandler struct {
 	accessTokenDuration time.Duration
 	srv                 *services.AuthService
 	oauthConfig         *oauth2.Config
+	isDev               bool // add this
 }
 
-func NewAuthHandler(srv *services.AuthService, tokenMaker token.Maker, accessTokenDuration time.Duration, oauthConfig *oauth2.Config) *AuthHandler {
+func NewAuthHandler(srv *services.AuthService, tokenMaker token.Maker, accessTokenDuration time.Duration, oauthConfig *oauth2.Config, isDev bool) *AuthHandler {
 	return &AuthHandler{
 		srv:                 srv,
 		tokenMaker:          tokenMaker,
 		accessTokenDuration: accessTokenDuration,
 		oauthConfig:         oauthConfig,
+		isDev:               isDev,
 	}
 }
 
@@ -68,7 +69,7 @@ func (h *AuthHandler) GoogleCallback(w http.ResponseWriter, r *http.Request) {
 	// get the flow back
 	// flow := r.URL.Query().Get("state")
 
-	token, err := h.oauthConfig.Exchange(context.Background(), code)
+	token, err := h.oauthConfig.Exchange(r.Context(), code)
 	if err != nil {
 		log.Println("token exchange error")
 		helper.WriteJSON(w, http.StatusInternalServerError, map[string]string{
@@ -77,7 +78,7 @@ func (h *AuthHandler) GoogleCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	client := h.oauthConfig.Client(context.Background(), token)
+	client := h.oauthConfig.Client(r.Context(), token)
 	resp, err := client.Get("https://www.googleapis.com/oauth2/v2/userinfo")
 	if err != nil {
 		helper.WriteJSON(w, http.StatusInternalServerError, map[string]string{
@@ -123,20 +124,12 @@ func (h *AuthHandler) GoogleCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// set cookie session
-	http.SetCookie(w, &http.Cookie{
-		Name:     "session_token",
-		Value:    t,
-		Path:     "/",
-		HttpOnly: true,
-		Secure:   true,
-		SameSite: http.SameSiteLaxMode,
-		MaxAge:   int(h.accessTokenDuration.Seconds()),
-	})
+	h.setSessionCookie(w, t)
 
 	if user.Role == "" {
-		http.Redirect(w, r, "http://localhost:5173/select-role", http.StatusTemporaryRedirect)
+		http.Redirect(w, r, "http://localhost:5173/select-role?fresh=true", http.StatusTemporaryRedirect)
 	} else {
-		http.Redirect(w, r, "http://localhost:5173/dashboard", http.StatusTemporaryRedirect)
+		http.Redirect(w, r, "http://localhost:5173/dashboard?fresh=true", http.StatusTemporaryRedirect)
 	}
 }
 
@@ -152,7 +145,7 @@ func (h *AuthHandler) AddRole(w http.ResponseWriter, r *http.Request) {
 	}
 
 	payload := r.Context().Value(middleware.UserContextKey).(*token.Payload)
-	email := payload.User.Email // ✅ payload.User not payload.LoginRequest
+	email := payload.User.Email
 
 	updatedUser, err := h.srv.UpdateRole(r.Context(), role, email)
 	if err != nil {
@@ -160,7 +153,6 @@ func (h *AuthHandler) AddRole(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// ✅ regenerate token with updated role
 	tokenUser := &models.TokenUser{
 		Name:  updatedUser.Name,
 		Email: updatedUser.Email,
@@ -174,19 +166,11 @@ func (h *AuthHandler) AddRole(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.SetCookie(w, &http.Cookie{
-		Name:     "session_token",
-		Value:    t,
-		Path:     "/",
-		HttpOnly: true,
-		Secure:   true,
-		SameSite: http.SameSiteLaxMode,
-		MaxAge:   int(h.accessTokenDuration.Seconds()),
-	})
+	// set cookie session
+	h.setSessionCookie(w, t)
 
 	helper.WriteJSON(w, http.StatusOK, map[string]any{
 		"message": "role updated successfully",
-		"token":   t,
 		"user":    updatedUser,
 	})
 }
@@ -196,5 +180,17 @@ func (h *AuthHandler) Profile(w http.ResponseWriter, r *http.Request) {
 	helper.WriteJSON(w, http.StatusOK, map[string]any{
 		"message": "profile successful",
 		"payload": payload,
+	})
+}
+
+func (h *AuthHandler) setSessionCookie(w http.ResponseWriter, token string) {
+	http.SetCookie(w, &http.Cookie{
+		Name:     "session_token",
+		Value:    token,
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   !h.isDev,
+		SameSite: http.SameSiteLaxMode,
+		MaxAge:   int(h.accessTokenDuration.Seconds()),
 	})
 }

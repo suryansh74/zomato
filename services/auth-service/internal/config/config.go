@@ -18,6 +18,7 @@ type Config struct {
 	GoogleClientID      string        `mapstructure:"GOOGLE_CLIENT_ID"`
 	GoogleClientSecret  string        `mapstructure:"GOOGLE_CLIENT_SECRET"`
 	GoogleRedirectURL   string        `mapstructure:"GOOGLE_REDIRECT_URL"`
+	IsDev               bool          `mapstructure:"IS_DEV"`
 }
 
 func LoadConfig() (config Config, err error) {

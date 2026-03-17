@@ -39,9 +39,9 @@ func (s *Server) Start() {
 	// 2. attach cors
 	s.router.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   []string{"http://localhost:5173"},
-		AllowedMethods:   []string{"GET", "POST"},
-		AllowedHeaders:   []string{"Content-Type"},
-		AllowCredentials: true, // critical for cookies
+		AllowedMethods:   []string{"GET", "POST", "OPTIONS"},
+		AllowedHeaders:   []string{"Content-Type", "Authorization"},
+		AllowCredentials: true,
 	}))
 
 	// 3. register routes
