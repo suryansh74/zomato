@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/cors"
 	"github.com/suryansh74/zomato/services/auth-service/internal/config"
 	"github.com/suryansh74/zomato/services/auth-service/internal/token"
 	"go.mongodb.org/mongo-driver/v2/mongo"
@@ -35,8 +36,15 @@ func (s *Server) Start() {
 	// 1. attach global middleware
 	s.router.Use(middleware.Logger)
 	s.router.Use(middleware.Recoverer)
+	// 2. attach cors
+	s.router.Use(cors.Handler(cors.Options{
+		AllowedOrigins:   []string{"http://localhost:5173"},
+		AllowedMethods:   []string{"GET", "POST"},
+		AllowedHeaders:   []string{"Content-Type"},
+		AllowCredentials: true, // critical for cookies
+	}))
 
-	// 2. register routes
+	// 3. register routes
 	s.setupRoutes()
 
 	// 3. start server

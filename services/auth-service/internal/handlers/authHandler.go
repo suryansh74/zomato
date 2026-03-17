@@ -133,12 +133,11 @@ func (h *AuthHandler) GoogleCallback(w http.ResponseWriter, r *http.Request) {
 		MaxAge:   int(h.accessTokenDuration.Seconds()),
 	})
 
-	helper.WriteJSON(w, http.StatusOK, map[string]any{
-		"message": "login successful",
-		"token":   t,
-		"user":    user,
-	})
-	// redirect
+	if user.Role == "" {
+		http.Redirect(w, r, "http://localhost:5173/select-role", http.StatusTemporaryRedirect)
+	} else {
+		http.Redirect(w, r, "http://localhost:5173/dashboard", http.StatusTemporaryRedirect)
+	}
 }
 
 func (h *AuthHandler) AddRole(w http.ResponseWriter, r *http.Request) {
