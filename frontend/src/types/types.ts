@@ -9,6 +9,9 @@ export interface AuthContextType {
   user: User | null;
   setUser: (user: User | null) => void;
   loading: boolean;
+  location: LocationData | null;
+  loadingLocation: boolean;
+  city: string;
 }
 
 export interface LocationData {

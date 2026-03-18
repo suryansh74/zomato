@@ -47,7 +47,7 @@ export default function SelectRole() {
       toast.success("Logged in successfully!", { id: "login-success" });
       navigate("/select-role", { replace: true });
     }
-  }, [searchParams]);
+  }, [searchParams, navigate]);
 
   const addRole = async () => {
     try {

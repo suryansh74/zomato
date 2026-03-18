@@ -1,3 +1,4 @@
+import { useAuth } from "@/context/useAuth";
 import { MapPin, Search, ShoppingCart } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useLocation, useSearchParams } from "react-router-dom";
@@ -8,6 +9,8 @@ export default function Navbar() {
 
   const [searchParams, setSearchParams] = useSearchParams();
   const [search, setSearch] = useState(searchParams.get("search") || "");
+
+  const { city } = useAuth();
 
   useEffect(() => {
     if (!isHome) return;
@@ -60,7 +63,7 @@ export default function Navbar() {
               {/* Location */}
               <div className="flex items-center gap-2 px-4 border-r min-w-[180px]">
                 <MapPin className="text-red-500 w-5 h-5" />
-                <span className="text-gray-600 text-sm truncate">Jaipur</span>
+                <span className="text-gray-600 text-sm truncate">{city}</span>
               </div>
 
               {/* Search */}
