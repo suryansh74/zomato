@@ -207,3 +207,17 @@ func (h *AuthHandler) setSessionCookie(w http.ResponseWriter, token string) {
 		MaxAge:   int(h.accessTokenDuration.Seconds()),
 	})
 }
+
+func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
+	http.SetCookie(w, &http.Cookie{
+		Name:     "session_token",
+		Value:    "",
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   !h.isDev,
+		MaxAge:   -1, // ✅ tells browser to delete the cookie
+	})
+	helper.WriteJSON(w, http.StatusOK, map[string]string{
+		"message": "logged out",
+	})
+}

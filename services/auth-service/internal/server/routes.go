@@ -34,5 +34,6 @@ func (s *Server) setupRoutes() {
 		r.Use(middleware.AuthMiddleware(s.tokenMaker))
 		r.Get("/api/auth/profile", authHandler.Profile)
 		r.Post("/api/auth/add_role", authHandler.AddRole)
+		r.Post("/api/auth/logout", authHandler.Logout)
 	})
 }
