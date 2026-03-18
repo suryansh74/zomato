@@ -1,7 +1,6 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Home from "./Pages/Home";
 import Login from "./Pages/Login";
-import Dashboard from "./Pages/Dashboard";
 import SelectRole from "./Pages/SelectRole";
 import AuthProvider from "./context/AuthProvider";
 import ProtectedRoute from "./middleware/ProtectedRoute";
@@ -17,7 +16,6 @@ export default function App() {
         <BrowserRouter>
           <Routes>
             {/* public — anyone */}
-            <Route path="/" element={<Home />} />
             <Route element={<PublicRoute />}>
               <Route path="/login" element={<Login />} />
             </Route>
@@ -29,7 +27,7 @@ export default function App() {
 
             {/* logged in AND has role */}
             <Route element={<RoleProtectedRoute />}>
-              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/" element={<Home />} />
             </Route>
           </Routes>
 

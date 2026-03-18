@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -23,15 +24,17 @@ type AuthHandler struct {
 	srv                 *services.AuthService
 	oauthConfig         *oauth2.Config
 	isDev               bool // add this
+	frontendURL         string
 }
 
-func NewAuthHandler(srv *services.AuthService, tokenMaker token.Maker, accessTokenDuration time.Duration, oauthConfig *oauth2.Config, isDev bool) *AuthHandler {
+func NewAuthHandler(srv *services.AuthService, tokenMaker token.Maker, accessTokenDuration time.Duration, oauthConfig *oauth2.Config, isDev bool, frontendURL string) *AuthHandler {
 	return &AuthHandler{
 		srv:                 srv,
 		tokenMaker:          tokenMaker,
 		accessTokenDuration: accessTokenDuration,
 		oauthConfig:         oauthConfig,
 		isDev:               isDev,
+		frontendURL:         frontendURL,
 	}
 }
 
@@ -127,9 +130,19 @@ func (h *AuthHandler) GoogleCallback(w http.ResponseWriter, r *http.Request) {
 	h.setSessionCookie(w, t)
 
 	if user.Role == "" {
-		http.Redirect(w, r, "http://localhost:5173/select-role?fresh=true", http.StatusTemporaryRedirect)
+		http.Redirect(
+			w,
+			r,
+			fmt.Sprintf("%s/select-role?fresh=true", h.frontendURL),
+			http.StatusTemporaryRedirect,
+		)
 	} else {
-		http.Redirect(w, r, "http://localhost:5173/dashboard?fresh=true", http.StatusTemporaryRedirect)
+		http.Redirect(
+			w,
+			r,
+			fmt.Sprintf("%s/?fresh=true", h.frontendURL),
+			http.StatusTemporaryRedirect,
+		)
 	}
 }
 

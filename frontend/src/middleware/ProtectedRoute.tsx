@@ -8,7 +8,7 @@ export default function ProtectedRoute() {
   if (loading) return <div>Loading...</div>;
   if (!user) return <Navigate to="/login" replace />;
   if (user.role && location.pathname === "/select-role")
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to="/" replace />;
 
   return <Outlet />;
 }

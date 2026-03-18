@@ -7,7 +7,7 @@ export default function PublicRoute() {
 
   // already logged in — send them to right place
   if (user && !user.role) return <Navigate to="/select-role" replace />;
-  if (user && user.role) return <Navigate to="/dashboard" replace />;
+  if (user && user.role) return <Navigate to="/" replace />;
 
   // not logged in → show the public page
   return <Outlet />;

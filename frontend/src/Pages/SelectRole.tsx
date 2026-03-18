@@ -44,7 +44,7 @@ export default function SelectRole() {
         setUser(data.data.user);
         toast.success("Role selected!");
         console.log("ok working fine");
-        navigate("/dashboard", { replace: true });
+        navigate("/", { replace: true });
       } else {
         toast.error("Failed to save role", { id: "role-error" });
       }
