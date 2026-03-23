@@ -8,11 +8,12 @@ import (
 	"time"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/suryansh74/zomato/services/auth-service/internal/helper"
-	"github.com/suryansh74/zomato/services/auth-service/internal/middleware"
-	"github.com/suryansh74/zomato/services/auth-service/internal/models"
+	authModel "github.com/suryansh74/zomato/services/auth-service/internal/models"
 	services "github.com/suryansh74/zomato/services/auth-service/internal/services"
-	"github.com/suryansh74/zomato/services/auth-service/internal/token"
+	"github.com/suryansh74/zomato/services/shared/helper"
+	"github.com/suryansh74/zomato/services/shared/middleware"
+	tokenModel "github.com/suryansh74/zomato/services/shared/models"
+	"github.com/suryansh74/zomato/services/shared/token"
 	"golang.org/x/oauth2"
 )
 
@@ -104,7 +105,7 @@ func (h *AuthHandler) GoogleCallback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// create user if not exist
-	user, err := h.srv.LoginOrCreate(r.Context(), &models.LoginRequest{
+	user, err := h.srv.LoginOrCreate(r.Context(), &authModel.LoginRequest{
 		Name:  googleUser.Name,
 		Email: googleUser.Email,
 		Image: googleUser.Picture,
@@ -114,7 +115,7 @@ func (h *AuthHandler) GoogleCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// create token
-	tokenUser := &models.TokenUser{
+	tokenUser := &tokenModel.TokenUser{
 		Name:  user.Name,
 		Email: user.Email,
 		Image: user.Image,
@@ -147,7 +148,7 @@ func (h *AuthHandler) GoogleCallback(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *AuthHandler) AddRole(w http.ResponseWriter, r *http.Request) {
-	var role models.Role
+	var role authModel.Role
 	if err := json.NewDecoder(r.Body).Decode(&role); err != nil {
 		helper.WriteJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid request body"})
 		return
@@ -166,7 +167,7 @@ func (h *AuthHandler) AddRole(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tokenUser := &models.TokenUser{
+	tokenUser := &tokenModel.TokenUser{
 		Name:  updatedUser.Name,
 		Email: updatedUser.Email,
 		Image: updatedUser.Image,

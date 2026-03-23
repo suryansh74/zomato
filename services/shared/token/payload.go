@@ -4,7 +4,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/suryansh74/zomato/services/auth-service/internal/models"
+	"github.com/suryansh74/zomato/services/shared/models"
 )
 
 var (

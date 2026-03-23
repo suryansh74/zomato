@@ -4,8 +4,8 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/suryansh74/zomato/services/auth-service/internal/helper"
-	"github.com/suryansh74/zomato/services/auth-service/internal/token"
+	"github.com/suryansh74/zomato/services/shared/helper"
+	"github.com/suryansh74/zomato/services/shared/token"
 )
 
 type contextKey string

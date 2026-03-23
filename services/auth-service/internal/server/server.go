@@ -8,7 +8,7 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
 	"github.com/suryansh74/zomato/services/auth-service/internal/config"
-	"github.com/suryansh74/zomato/services/auth-service/internal/token"
+	"github.com/suryansh74/zomato/services/shared/token"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 )
 

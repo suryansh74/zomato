@@ -3,9 +3,9 @@ package server
 import (
 	"github.com/go-chi/chi/v5"
 	"github.com/suryansh74/zomato/services/auth-service/internal/handlers"
-	"github.com/suryansh74/zomato/services/auth-service/internal/middleware"
 	"github.com/suryansh74/zomato/services/auth-service/internal/repositories"
 	services "github.com/suryansh74/zomato/services/auth-service/internal/services"
+	"github.com/suryansh74/zomato/services/shared/middleware"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 )
