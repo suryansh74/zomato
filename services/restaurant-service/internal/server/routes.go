@@ -2,6 +2,7 @@ package server
 
 import (
 	"github.com/go-chi/chi/v5"
+	"github.com/suryansh74/zomato/services/restaurant-service/internal/client"
 	"github.com/suryansh74/zomato/services/restaurant-service/internal/handlers"
 	restaurantMiddleware "github.com/suryansh74/zomato/services/restaurant-service/internal/middleware"
 	"github.com/suryansh74/zomato/services/restaurant-service/internal/repositories"
@@ -13,8 +14,9 @@ func (s *Server) setupRoutes() {
 	// handlers are created here and passed into routes
 	restaurantRepository := repositories.NewRestaurantRepository(s.client, s.cfg.DBName, s.cfg.CollectionName)
 	restaurantService := services.NewRestaurantService(restaurantRepository)
-	restaurantHandler := handlers.NewRestaurantHandler(restaurantService)
 
+	utilsClient := client.NewUtilsClient(s.cfg.UtilsServiceURL)
+	restaurantHandler := handlers.NewRestaurantHandler(restaurantService, utilsClient)
 	// health check
 	s.router.Get("/api/restaurant/health", restaurantHandler.CheckHealth)
 
@@ -22,6 +24,6 @@ func (s *Server) setupRoutes() {
 	s.router.Group(func(r chi.Router) {
 		r.Use(middleware.AuthMiddleware(s.tokenMaker))
 		r.Use(restaurantMiddleware.IsRestaurantOwner())
-		// r.Post("/api/restaurant/addRestaurant", restaurantHandler.AddRestaurant)
+		r.Post("/api/restaurant/create", restaurantHandler.AddRestaurant)
 	})
 }
