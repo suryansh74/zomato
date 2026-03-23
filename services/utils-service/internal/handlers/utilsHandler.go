@@ -1,16 +1,12 @@
 package handlers
 
 import (
-	"image"
+	"context"
 	"net/http"
 
-	_ "image/gif"
-	_ "image/jpeg"
-	_ "image/png"
-
+	"github.com/cloudinary/cloudinary-go/v2"
 	"github.com/go-playground/validator/v10"
 	"github.com/suryansh74/zomato/services/shared/helper"
-	"github.com/suryansh74/zomato/services/utils-service/internal/models"
 	services "github.com/suryansh74/zomato/services/utils-service/internal/services"
 )
 
@@ -18,11 +14,15 @@ var validate = validator.New()
 
 type UtilsHandler struct {
 	srv *services.UtilsService
+	cld *cloudinary.Cloudinary
+	ctx context.Context
 }
 
-func NewUtilsHandler(srv *services.UtilsService) *UtilsHandler {
+func NewUtilsHandler(srv *services.UtilsService, cld *cloudinary.Cloudinary, ctx context.Context) *UtilsHandler {
 	return &UtilsHandler{
 		srv: srv,
+		cld: cld,
+		ctx: ctx,
 	}
 }
 
@@ -32,50 +32,39 @@ func (h *UtilsHandler) CheckHealth(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// ImageUpload handles the HTTP request and passes data to the service layer
 func (h *UtilsHandler) ImageUpload(w http.ResponseWriter, r *http.Request) {
-	// check method
-	if r.Method != http.MethodPost {
-		helper.WriteJSON(w, http.StatusMethodNotAllowed, map[string]string{
-			"error": "Only POST requests allowed",
+	// Protect the HTTP server from excessively large payloads
+	r.Body = http.MaxBytesReader(w, r.Body, services.MaxUploadSize+1024)
+
+	if err := r.ParseMultipartForm(services.MaxUploadSize); err != nil {
+		helper.WriteJSON(w, http.StatusBadRequest, map[string]string{
+			"error": "File upload exceeds limits or is malformed",
 		})
+		return
 	}
 
-	// Parse multipart form (max 10MB)
-	err := r.ParseMultipartForm(10 << 20)
+	file, fileHeader, err := r.FormFile("image")
 	if err != nil {
 		helper.WriteJSON(w, http.StatusBadRequest, map[string]string{
-			"error": err.Error(),
+			"error": "Failed to get image from request. Ensure form field is named 'image'",
 		})
-	}
-
-	// Get file from form (key = "image")
-	file, _, err := r.FormFile("image")
-	if err != nil {
-		helper.WriteJSON(w, http.StatusBadRequest, map[string]string{
-			"error": err.Error(),
-		})
+		return
 	}
 	defer file.Close()
 
-	// Decode image
-	img, _, err := image.Decode(file)
+	// Pass file to the service layer for logic and validation
+	secureURL, err := h.srv.ProcessAndUploadImage(r.Context(), h.cld, file, fileHeader)
 	if err != nil {
 		helper.WriteJSON(w, http.StatusBadRequest, map[string]string{
 			"error": err.Error(),
 		})
+		return
 	}
 
-	// Get bounds
-	bounds := img.Bounds()
-	width := bounds.Dx()
-	height := bounds.Dy()
-
-	resp := &models.ImageDimensionResponse{
-		Width:  width,
-		Height: height,
-	}
-
-	helper.WriteJSON(w, http.StatusOK, map[string]any{
-		"image_dimensions": resp,
+	// Return the final URL
+	helper.WriteJSON(w, http.StatusOK, map[string]string{
+		"message":   "Image uploaded successfully",
+		"image_url": secureURL,
 	})
 }

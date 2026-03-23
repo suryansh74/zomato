@@ -12,6 +12,7 @@ type Config struct {
 	Port                string        `mapstructure:"SERVER_PORT"`
 	TokenSymmetricKey   string        `mapstructure:"TOKEN_SYMMETRIC_KEY"`
 	AccessTokenDuration time.Duration `mapstructure:"ACCESS_TOKEN_DURATION"`
+	CloudinaryURL       string        `mapstructure:"CLOUDINARY_URL"`
 }
 
 func LoadConfig() (config Config, err error) {
