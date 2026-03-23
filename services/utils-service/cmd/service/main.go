@@ -8,13 +8,15 @@ import (
 )
 
 func main() {
-	// 1. load config
-	cfg, err := config.LoadConfig()
+	// developer chooses here 👇
+	storageProvider := config.Cloudinary
+	// storageProvider := config.GDrive
+
+	cfg, err := config.LoadConfig(storageProvider)
 	if err != nil {
 		log.Fatal("failed to load config: ", err)
 	}
 
-	// 2. start server, pass client so handlers can use it later
 	srv := server.NewServer(&cfg)
 	srv.Start()
 }

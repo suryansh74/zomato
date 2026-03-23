@@ -8,14 +8,17 @@ import (
 )
 
 type Config struct {
-	Host                string        `mapstructure:"SERVER_HOST"`
-	Port                string        `mapstructure:"SERVER_PORT"`
-	TokenSymmetricKey   string        `mapstructure:"TOKEN_SYMMETRIC_KEY"`
-	AccessTokenDuration time.Duration `mapstructure:"ACCESS_TOKEN_DURATION"`
-	CloudinaryURL       string        `mapstructure:"CLOUDINARY_URL"`
+	Host                  string        `mapstructure:"SERVER_HOST"`
+	Port                  string        `mapstructure:"SERVER_PORT"`
+	TokenSymmetricKey     string        `mapstructure:"TOKEN_SYMMETRIC_KEY"`
+	AccessTokenDuration   time.Duration `mapstructure:"ACCESS_TOKEN_DURATION"`
+	CloudinaryURL         string        `mapstructure:"CLOUDINARY_URL"`
+	GoogleCredentialsPath string        `mapstructure:"GOOGLE_CREDENTIALS_PATH"`
+	GoogleDriveFolderID   string        `mapstructure:"GOOGLE_DRIVE_FOLDER_ID"`
+	StorageProvider       StorageProvider
 }
 
-func LoadConfig() (config Config, err error) {
+func LoadConfig(storageProvider StorageProvider) (config Config, err error) {
 	viper.SetConfigName(".env")
 	viper.SetConfigType("env")
 	viper.AddConfigPath(".")
@@ -25,6 +28,17 @@ func LoadConfig() (config Config, err error) {
 		return config, fmt.Errorf("failed to read config: %w", err)
 	}
 
-	err = viper.Unmarshal(&config)
-	return config, err
+	if err = viper.Unmarshal(&config); err != nil {
+		return config, err
+	}
+
+	// assign from main
+	config.StorageProvider = storageProvider
+
+	// validate
+	if !storageProvider.IsValid() {
+		return config, fmt.Errorf("invalid storage provider: %s", storageProvider)
+	}
+
+	return config, nil
 }

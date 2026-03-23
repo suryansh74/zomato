@@ -7,28 +7,29 @@ import (
 	"mime/multipart"
 	"net/http"
 
-	"github.com/cloudinary/cloudinary-go/v2"
-	"github.com/cloudinary/cloudinary-go/v2/api"
-	"github.com/cloudinary/cloudinary-go/v2/api/uploader"
+	"github.com/suryansh74/zomato/services/utils-service/internal/adapters"
 )
 
-// MaxUploadSize is 2 Megabytes
-const MaxUploadSize = 2 << 20
+const MaxUploadSize = 2 << 20 // 2MB
 
-type UtilsService struct{}
-
-func NewUtilsService() *UtilsService {
-	return &UtilsService{}
+type UtilsService struct {
+	storage adapters.StorageAdapter // Uses the interface!
 }
 
-// ProcessAndUploadImage validates the file size and type, then uploads it to Cloudinary
-func (s *UtilsService) ProcessAndUploadImage(ctx context.Context, cld *cloudinary.Cloudinary, file multipart.File, header *multipart.FileHeader) (string, error) {
-	// 1. Validate File Size
+// NewUtilsService injects the chosen storage adapter
+func NewUtilsService(storage adapters.StorageAdapter) *UtilsService {
+	return &UtilsService{
+		storage: storage,
+	}
+}
+
+func (s *UtilsService) ProcessAndUploadImage(ctx context.Context, file multipart.File, header *multipart.FileHeader) (string, error) {
+	// 1. Validate Size
 	if header.Size > MaxUploadSize {
 		return "", errors.New("image file size must be 2MB or less")
 	}
 
-	// 2. Validate File Type securely (read first 512 bytes)
+	// 2. Validate Type
 	buff := make([]byte, 512)
 	if _, err := file.Read(buff); err != nil && err != io.EOF {
 		return "", errors.New("failed to read file content")
@@ -39,20 +40,11 @@ func (s *UtilsService) ProcessAndUploadImage(ctx context.Context, cld *cloudinar
 		return "", errors.New("invalid file type. Only JPG/JPEG and PNG are allowed")
 	}
 
-	// 3. Reset the file pointer back to the beginning
+	// 3. Reset pointer
 	if _, err := file.Seek(0, io.SeekStart); err != nil {
 		return "", errors.New("failed to process file stream")
 	}
 
-	// 4. Upload to Cloudinary
-	resp, err := cld.Upload.Upload(ctx, file, uploader.UploadParams{
-		Folder:         "zomato_clone/uploads",
-		UniqueFilename: api.Bool(true),
-		Overwrite:      api.Bool(false),
-	})
-	if err != nil {
-		return "", errors.New("failed to upload image to cloud storage")
-	}
-
-	return resp.SecureURL, nil
+	// 4. Delegate to the injected adapter
+	return s.storage.UploadImage(ctx, file, header.Filename)
 }
