@@ -25,7 +25,7 @@ func (s *Server) setupRoutes() {
 	authHandler := handlers.NewAuthHandler(authService, s.tokenMaker, s.cfg.AccessTokenDuration, oauthConfig, s.cfg.IsDev, s.cfg.FrontendURL)
 
 	// health check
-	s.router.Get("/api/health", authHandler.CheckHealth)
+	s.router.Get("/api/auth/health", authHandler.CheckHealth)
 	s.router.Get("/api/auth/login", authHandler.Login)
 	s.router.Get("/api/auth/google/callback", authHandler.GoogleCallback)
 

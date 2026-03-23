@@ -1,0 +1,53 @@
+package server
+
+import (
+	"fmt"
+	"net/http"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/cors"
+	"github.com/suryansh74/zomato/services/shared/token"
+	"github.com/suryansh74/zomato/services/utils-service/internal/config"
+	"go.mongodb.org/mongo-driver/v2/mongo"
+)
+
+type Server struct {
+	cfg        *config.Config
+	router     *chi.Mux
+	client     *mongo.Client
+	tokenMaker token.Maker
+}
+
+func NewServer(cfg *config.Config) *Server {
+	tokenMaker, err := token.NewPasetoMaker(cfg.TokenSymmetricKey)
+	if err != nil {
+		panic(err)
+	}
+	return &Server{
+		cfg:        cfg,
+		router:     chi.NewRouter(),
+		tokenMaker: tokenMaker,
+	}
+}
+
+func (s *Server) Start() {
+	// 1. attach global middleware
+	s.router.Use(middleware.Logger)
+	s.router.Use(middleware.Recoverer)
+	// 2. attach cors
+	s.router.Use(cors.Handler(cors.Options{
+		AllowedOrigins:   []string{"http://localhost:5173"},
+		AllowedMethods:   []string{"GET", "POST", "OPTIONS"},
+		AllowedHeaders:   []string{"Content-Type", "Authorization"},
+		AllowCredentials: true,
+	}))
+
+	// 3. register routes
+	s.setupRoutes()
+
+	// 3. start server
+	addr := fmt.Sprintf("%s:%s", s.cfg.Host, s.cfg.Port)
+	fmt.Println("utils-service running on", addr)
+	http.ListenAndServe(addr, s.router)
+}
