@@ -1,0 +1,3 @@
+add custom error messages for utils and restaurants
+also understand flow for dev env
+make openapi generator or api docs

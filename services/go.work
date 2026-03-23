@@ -4,4 +4,5 @@ use (
 	./auth-service
 	./shared
 	./utils-service
+	./restaurant-service
 )
