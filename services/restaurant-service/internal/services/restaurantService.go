@@ -19,7 +19,7 @@ func NewRestaurantService(repo repositories.RestaurantRepository) *RestaurantSer
 
 // CheckIfOwnerHasRestaurant
 // ================================================================================
-func (s *RestaurantService) CheckIfOwnerHasRestaurant(ctx context.Context, email string) (bool, error) {
+func (s *RestaurantService) CheckIfOwnerHasRestaurant(ctx context.Context, email string) (string, bool, error) {
 	return s.repo.CheckIfOwnerHasRestaurant(ctx, email)
 }
 

@@ -11,12 +11,18 @@ import (
 )
 
 func (s *Server) setupRoutes() {
-	// handlers are created here and passed into routes
+	utilsClient := client.NewUtilsClient(s.cfg.UtilsServiceURL)
+
+	// restaurant
 	restaurantRepository := repositories.NewRestaurantRepository(s.client, s.cfg.DBName, s.cfg.CollectionName)
 	restaurantService := services.NewRestaurantService(restaurantRepository)
-
-	utilsClient := client.NewUtilsClient(s.cfg.UtilsServiceURL)
 	restaurantHandler := handlers.NewRestaurantHandler(restaurantService, utilsClient)
+
+	// menu
+	menuRepository := repositories.NewMenuRepository(s.client, s.cfg.DBName, "menu_items")
+	menuService := services.NewMenuService(menuRepository)
+	menuHandler := handlers.NewMenuHandler(menuService, restaurantService, utilsClient)
+
 	// health check
 	s.router.Get("/api/restaurant/health", restaurantHandler.CheckHealth)
 
@@ -24,8 +30,15 @@ func (s *Server) setupRoutes() {
 	s.router.Group(func(r chi.Router) {
 		r.Use(middleware.AuthMiddleware(s.tokenMaker))
 		r.Use(restaurantMiddleware.IsRestaurantOwner())
+		// restaurant routes
 		r.Post("/api/restaurant/create", restaurantHandler.AddRestaurant)
 		r.Get("/api/restaurant/read", restaurantHandler.GetRestaurant)
 		r.Put("/api/restaurant/update", restaurantHandler.UpdateRestaurant)
+		// menu routes
+		r.Post("/api/menu", menuHandler.AddMenuItem)
+		r.Get("/api/menu", menuHandler.GetMenuItems)
+		r.Get("/api/menu/{id}", menuHandler.GetMenuItem)
+		r.Put("/api/menu/{id}", menuHandler.UpdateMenuItem)
+		r.Delete("/api/menu/{id}", menuHandler.DeleteMenuItem)
 	})
 }

@@ -40,7 +40,7 @@ func (h *RestaurantHandler) AddRestaurant(w http.ResponseWriter, r *http.Request
 	email := r.Context().Value(middleware.UserContextKey).(*token.Payload).User.Email
 
 	// check duplicate
-	exists, err := h.srv.CheckIfOwnerHasRestaurant(r.Context(), email)
+	_, exists, err := h.srv.CheckIfOwnerHasRestaurant(r.Context(), email)
 	if err != nil {
 		helper.WriteJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
@@ -118,7 +118,7 @@ func (h *RestaurantHandler) GetRestaurant(w http.ResponseWriter, r *http.Request
 	email := r.Context().Value(middleware.UserContextKey).(*token.Payload).User.Email
 
 	// get restaurant
-	exists, err := h.srv.CheckIfOwnerHasRestaurant(r.Context(), email)
+	_, exists, err := h.srv.CheckIfOwnerHasRestaurant(r.Context(), email)
 	if err != nil {
 		helper.WriteJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return

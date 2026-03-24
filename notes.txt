@@ -1,11 +1,22 @@
 // backend
-add custom error messages for utils and restaurants
-also understand flow for dev env
-make openapi generator or api docs
-change service name in cmd/service/main.go
-context must be added to restaurant and utils service for image upload
+1. add custom error messages for utils and restaurants
+2. also understand flow for dev env
+3. make openapi generator or api docs
+4. change service name in cmd/service/main.go
+5. context must be added to restaurant and utils service for image upload
+6. add logic so that after image update or deletion of object it should delete image
+in cloudinary
 
 // frontend
-change fetch to axios
-change backendUrl to auth service url 
-add validation and styling for phone number for restaurant create page
+1.change fetch to axios
+2.change backendUrl to auth service url 
+3.add validation and styling for phone number for restaurant and for other fields create
+page
+4.add toaster
+5.login successfull toast
+6. when there is adding, updating, deleting or any other loading after by pressing
+button then inside of that button should also change like Add to Adding...
+7. try to change all button part with icon
+8. add validation 
+9. add tool tip
+10. instead of showing alert message use pop up model of shadcn card

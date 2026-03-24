@@ -39,3 +39,15 @@ export interface Restaurant {
   created_at: string;
   updated_at: string;
 }
+
+export interface MenuItem {
+  id: string;
+  restaurant_id: string;
+  name: string;
+  description?: string;
+  image?: string;
+  price: number;
+  is_available: boolean;
+  created_at: string;
+  updated_at: string;
+}

@@ -13,7 +13,7 @@ import (
 )
 
 type RestaurantRepository interface {
-	CheckIfOwnerHasRestaurant(ctx context.Context, email string) (bool, error)
+	CheckIfOwnerHasRestaurant(ctx context.Context, email string) (string, bool, error)
 	CreateRestaurant(ctx context.Context, restaurant *models.Restaurant) (*models.Restaurant, error)
 	GetRestaurant(ctx context.Context, email string) (*models.Restaurant, error)
 	UpdateRestaurant(ctx context.Context, email string, req *models.UpdateRestaurantRequest) (*models.Restaurant, error)
@@ -37,17 +37,17 @@ func NewRestaurantRepository(db *mongo.Client, dbName, collectionName string) Re
 
 // NewRestaurantService constructor for restaurantService
 // ================================================================================
-func (r *restaurantRepository) CheckIfOwnerHasRestaurant(ctx context.Context, email string) (bool, error) {
+func (r *restaurantRepository) CheckIfOwnerHasRestaurant(ctx context.Context, email string) (string, bool, error) {
 	coll := r.db.Database(r.dbName).Collection(r.collectionName)
 	var result models.Restaurant
 	err := coll.FindOne(ctx, bson.D{{Key: "owner_email", Value: email}}).Decode(&result)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
-			return false, nil
+			return "", false, nil
 		}
-		return true, apperr.ErrInternalServer
+		return "", true, apperr.ErrInternalServer
 	}
-	return true, nil
+	return result.ID.String(), true, nil
 }
 
 // NewRestaurantService constructor for restaurantService
