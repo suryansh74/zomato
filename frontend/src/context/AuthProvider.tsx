@@ -50,6 +50,7 @@ export default function AuthProvider({
               data.address.village ||
               "Your Location",
           );
+          setLoadingLocation(false);
         } catch (error) {
           setLocation({
             latitude,
@@ -57,6 +58,7 @@ export default function AuthProvider({
             formattedAddress: "Custom Location",
           });
           setCity("Failed to Load");
+          setLoadingLocation(false);
           console.error(error);
         } finally {
           setLoadingLocation(false);

@@ -48,3 +48,9 @@ func (s *RestaurantService) CreateRestaurant(ctx context.Context, ownerEmail str
 func (s *RestaurantService) GetRestaurant(ctx context.Context, email string) (*models.Restaurant, error) {
 	return s.repo.GetRestaurant(ctx, email)
 }
+
+// UpdateRestaurant
+// ===============================================================================
+func (s *RestaurantService) UpdateRestaurant(ctx context.Context, email string, req *models.UpdateRestaurantRequest) (*models.Restaurant, error) {
+	return s.repo.UpdateRestaurant(ctx, email, req)
+}

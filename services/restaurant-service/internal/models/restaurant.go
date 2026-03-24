@@ -35,3 +35,9 @@ type RestaurantRequest struct {
 	Longitude        float64 `json:"longitude"   bson:"longitude"    validate:"required"`
 	FormattedAddress string  `json:"formatted_address" bson:"formatted_address" validate:"required,min=5,max=200"`
 }
+
+type UpdateRestaurantRequest struct {
+	Name        *string `json:"name"`
+	Description *string `json:"description"`
+	IsOpen      *bool   `json:"is_open"`
+}

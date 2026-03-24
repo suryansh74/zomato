@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"net/http"
 	"strconv"
 
@@ -134,4 +135,25 @@ func (h *RestaurantHandler) GetRestaurant(w http.ResponseWriter, r *http.Request
 	}
 
 	helper.WriteJSON(w, http.StatusOK, restaurant)
+}
+
+func (h *RestaurantHandler) UpdateRestaurant(w http.ResponseWriter, r *http.Request) {
+	email := r.Context().Value(middleware.UserContextKey).(*token.Payload).User.Email
+
+	var req models.UpdateRestaurantRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		helper.WriteJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid request payload"})
+		return
+	}
+
+	restaurant, err := h.srv.UpdateRestaurant(r.Context(), email, &req)
+	if err != nil {
+		helper.WriteJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
+
+	helper.WriteJSON(w, http.StatusOK, map[string]any{
+		"message": "Restaurant updated successfully",
+		"data":    restaurant,
+	})
 }

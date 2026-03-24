@@ -26,5 +26,6 @@ func (s *Server) setupRoutes() {
 		r.Use(restaurantMiddleware.IsRestaurantOwner())
 		r.Post("/api/restaurant/create", restaurantHandler.AddRestaurant)
 		r.Get("/api/restaurant/read", restaurantHandler.GetRestaurant)
+		r.Put("/api/restaurant/update", restaurantHandler.UpdateRestaurant)
 	})
 }

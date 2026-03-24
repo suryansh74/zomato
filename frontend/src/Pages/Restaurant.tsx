@@ -1,3 +1,4 @@
+// Restaurant.tsx — Page component
 import { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import { restaurantServiceUrl } from "@/lib/config";
@@ -11,26 +12,21 @@ export default function Restaurant() {
   const [error, setError] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
 
-  // We wrap this in useCallback so we can pass it to the Create form to trigger a refresh
   const fetchMyRestaurant = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-
-      const res = await axios.get<{ data: RestaurantType }>(
-        `${restaurantServiceUrl}/restaurant/read`,
-        { withCredentials: true },
-      );
-
-      // Adjust based on your API response structure.
-      // Assuming res.data is the actual restaurant object based on standard Go helper
-      setRestaurant(res.data.data ?? res.data);
+      const res = await axios.get(`${restaurantServiceUrl}/restaurant/read`, {
+        withCredentials: true,
+      });
+      // Normalize: handle both { data: Restaurant } and direct Restaurant
+      const data: RestaurantType = res.data?.data ?? res.data;
+      console.log("[Restaurant] fetched:", data); // ← keep until confirmed working
+      setRestaurant(data);
     } catch (err) {
       if (axios.isAxiosError(err)) {
-        // Intercept 404 (No Restaurant Found) so we can show the Create Prompt
         if (err.response?.status === 404) {
           setRestaurant(null);
-          setError(null);
         } else {
           setError(err.response?.data?.error ?? "Failed to fetch restaurant");
         }
@@ -46,13 +42,6 @@ export default function Restaurant() {
     fetchMyRestaurant();
   }, [fetchMyRestaurant]);
 
-  // Handle successful creation
-  const handleSuccess = () => {
-    setIsCreating(false);
-    fetchMyRestaurant(); // Refresh the data
-  };
-
-  // UI States
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-gray-50">
@@ -78,19 +67,20 @@ export default function Restaurant() {
     );
   }
 
-  // If user doesn't have a restaurant, decide whether to show the form or the prompt
   if (!restaurant) {
     if (isCreating) {
       return (
         <div className="min-h-screen bg-gray-50 py-12 px-4">
           <CreateRestaurantForm
-            onSuccess={handleSuccess}
+            onSuccess={() => {
+              setIsCreating(false);
+              fetchMyRestaurant();
+            }}
             onCancel={() => setIsCreating(false)}
           />
         </div>
       );
     }
-
     return (
       <div className="min-h-screen bg-gray-50 py-20 px-4">
         <div className="max-w-2xl mx-auto bg-white border border-gray-200 rounded-2xl shadow-sm p-12 text-center">
@@ -115,9 +105,9 @@ export default function Restaurant() {
     );
   }
 
-  // If restaurant exists, render it
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4">
+      {/* Pass the restaurant and NO onRefresh — MyRestaurant manages its own state */}
       <MyRestaurant restaurant={restaurant} />
     </div>
   );

@@ -2,27 +2,25 @@ import React, { useState } from "react";
 import axios from "axios";
 import { restaurantServiceUrl } from "@/lib/config";
 import { useAuth } from "@/context/useAuth";
+import toast from "react-hot-toast";
 
 interface CreateRestaurantFormProps {
   onSuccess: () => void;
-  onCancel: () => void;
+  onCancel: () => void; // Keeping this if you still want a cancel option, otherwise can be removed
 }
 
 export function CreateRestaurantForm({
   onSuccess,
   onCancel,
 }: CreateRestaurantFormProps) {
-  const { location, loadingLocation } = useAuth(); // Tap into your existing context
+  const { location, loadingLocation } = useAuth(); // Automatically fetched from AuthProvider
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     name: "",
-    description: "",
     phone: "",
-    formatted_address: "",
-    latitude: "",
-    longitude: "",
+    description: "",
   });
 
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -43,51 +41,51 @@ export function CreateRestaurantForm({
     }
   };
 
-  // Helper to pre-fill location from context
-  const handleUseMyLocation = () => {
-    if (location) {
-      setFormData((prev) => ({
-        ...prev,
-        formatted_address: location.formattedAddress,
-        latitude: location.latitude.toString(),
-        longitude: location.longitude.toString(),
-      }));
-    } else {
-      alert(
-        "Location not available. Please ensure location services are enabled.",
-      );
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
 
+    // 1. Validations
     if (!imageFile) {
-      setError("A cover image is required for your restaurant.");
+      setError("Please upload a restaurant image.");
       setLoading(false);
       return;
     }
 
+    if (!location) {
+      setError(
+        "Location is required. Please allow location access in your browser.",
+      );
+      setLoading(false);
+      return;
+    }
+
+    // 2. Prepare Payload
     const payload = new FormData();
     payload.append("name", formData.name);
-    payload.append("description", formData.description);
     payload.append("phone", formData.phone);
-    payload.append("formatted_address", formData.formatted_address);
-    payload.append("latitude", formData.latitude);
-    payload.append("longitude", formData.longitude);
+    payload.append("description", formData.description);
+
+    // Append location data securely from context (user cannot edit this)
+    payload.append("formatted_address", location.formattedAddress);
+    payload.append("latitude", location.latitude.toString());
+    payload.append("longitude", location.longitude.toString());
+
+    // Append the file
     payload.append("image", imageFile);
 
+    // 3. Submit
     try {
       await axios.post(`${restaurantServiceUrl}/restaurant/create`, payload, {
         withCredentials: true,
         headers: { "Content-Type": "multipart/form-data" },
       });
+      toast.success("Restaurant added successfully!");
       onSuccess();
     } catch (err) {
       if (axios.isAxiosError(err)) {
-        setError(err.response?.data?.error || "Failed to create restaurant.");
+        setError(err.response?.data?.error || "Failed to add restaurant.");
       } else {
         setError("An unexpected error occurred.");
       }
@@ -97,218 +95,151 @@ export function CreateRestaurantForm({
   };
 
   return (
-    <div className="max-w-3xl mx-auto bg-white border border-gray-100 rounded-2xl shadow-2xl overflow-hidden">
-      <div className="bg-gradient-to-r from-red-600 to-red-700 p-8 text-white">
-        <h2 className="text-3xl font-extrabold mb-2">Create Your Restaurant</h2>
-        <p className="text-red-100 font-medium">
-          Fill out the details below to set up your business profile.
-        </p>
-      </div>
+    <div className="max-w-xl mx-auto bg-white p-8 rounded-xl shadow-sm border border-gray-100 mt-10">
+      <h2 className="text-2xl font-semibold text-gray-900 mb-8">
+        Add Your Restaurant
+      </h2>
 
-      <form onSubmit={handleSubmit} className="p-8 space-y-8">
+      <form onSubmit={handleSubmit} className="space-y-5">
         {error && (
-          <div className="p-4 bg-red-50 border-l-4 border-red-600 text-red-700 rounded-r shadow-sm font-medium">
+          <div className="p-3 bg-red-50 border-l-4 border-red-500 text-red-700 text-sm rounded">
             {error}
           </div>
         )}
 
-        {/* Basic Info */}
-        <div className="space-y-6">
-          <h3 className="text-lg font-bold text-gray-900 border-b pb-2">
-            Basic Information
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-bold text-gray-700 mb-1">
-                Restaurant Name <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                name="name"
-                required
-                value={formData.name}
-                onChange={handleInputChange}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all bg-gray-50 focus:bg-white"
-                placeholder="e.g. The Spicy Kitchen"
+        {/* Name */}
+        <div>
+          <input
+            type="text"
+            name="name"
+            required
+            value={formData.name}
+            onChange={handleInputChange}
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-1 focus:ring-red-500 focus:border-red-500 outline-none placeholder-gray-400"
+            placeholder="Restaurant name"
+          />
+        </div>
+
+        {/* Contact Number */}
+        <div>
+          <input
+            type="tel"
+            name="phone"
+            required
+            value={formData.phone}
+            onChange={handleInputChange}
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-1 focus:ring-red-500 focus:border-red-500 outline-none placeholder-gray-400"
+            placeholder="Contact Number"
+          />
+        </div>
+
+        {/* Description */}
+        <div>
+          <textarea
+            name="description"
+            rows={4}
+            value={formData.description}
+            onChange={handleInputChange}
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-1 focus:ring-red-500 focus:border-red-500 outline-none placeholder-gray-400 resize-none"
+            placeholder="Restaurant Description"
+          />
+        </div>
+
+        {/* Image Upload Box */}
+        <div className="relative border border-gray-300 rounded-lg p-4 flex items-center gap-3 hover:bg-gray-50 transition-colors cursor-pointer group overflow-hidden">
+          <input
+            type="file"
+            accept="image/*"
+            required
+            onChange={handleImageChange}
+            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+          />
+          {imagePreview ? (
+            <div className="flex items-center gap-4 w-full">
+              <img
+                src={imagePreview}
+                alt="Preview"
+                className="w-12 h-12 object-cover rounded-md"
               />
+              <span className="text-gray-600 font-medium text-sm truncate">
+                {imageFile?.name}
+              </span>
             </div>
-            <div>
-              <label className="block text-sm font-bold text-gray-700 mb-1">
-                Phone Number <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="tel"
-                name="phone"
-                required
-                value={formData.phone}
-                onChange={handleInputChange}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all bg-gray-50 focus:bg-white"
-                placeholder="e.g. +91 98765 43210"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-bold text-gray-700 mb-1">
-              Description
-            </label>
-            <textarea
-              name="description"
-              rows={3}
-              value={formData.description}
-              onChange={handleInputChange}
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all bg-gray-50 focus:bg-white resize-none"
-              placeholder="Tell customers what makes your food special..."
-            />
-          </div>
+          ) : (
+            <>
+              <svg
+                className="w-5 h-5 text-red-500"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
+                />
+              </svg>
+              <span className="text-gray-500 group-hover:text-gray-700">
+                Upload restaurant image
+              </span>
+            </>
+          )}
         </div>
 
-        {/* Location Info */}
-        <div className="space-y-6 pt-2">
-          <div className="flex items-center justify-between border-b pb-2">
-            <h3 className="text-lg font-bold text-gray-900">
-              Location Details
-            </h3>
-            <button
-              type="button"
-              onClick={handleUseMyLocation}
-              disabled={loadingLocation}
-              className="text-sm font-semibold text-red-600 hover:text-red-800 flex items-center gap-1 bg-red-50 px-3 py-1.5 rounded-lg transition-colors"
-            >
-              📍 {loadingLocation ? "Locating..." : "Use My Current Location"}
-            </button>
-          </div>
-
-          <div>
-            <label className="block text-sm font-bold text-gray-700 mb-1">
-              Full Address <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              name="formatted_address"
-              required
-              value={formData.formatted_address}
-              onChange={handleInputChange}
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all bg-gray-50 focus:bg-white mb-4"
-              placeholder="123 Food Street, City, State"
-            />
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-xs font-bold text-gray-500 mb-1 uppercase tracking-wider">
-                  Latitude
-                </label>
-                <input
-                  type="number"
-                  step="any"
-                  name="latitude"
-                  required
-                  value={formData.latitude}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 outline-none bg-gray-50 font-mono text-sm"
-                  placeholder="e.g. 26.9124"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-gray-500 mb-1 uppercase tracking-wider">
-                  Longitude
-                </label>
-                <input
-                  type="number"
-                  step="any"
-                  name="longitude"
-                  required
-                  value={formData.longitude}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 outline-none bg-gray-50 font-mono text-sm"
-                  placeholder="e.g. 75.7873"
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Image Upload */}
-        <div className="space-y-6 pt-2">
-          <h3 className="text-lg font-bold text-gray-900 border-b pb-2">
-            Media
-          </h3>
-          <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2">
-              Cover Image <span className="text-red-500">*</span>
-            </label>
-            <div className="flex items-center gap-6 p-4 border-2 border-dashed border-gray-300 rounded-xl bg-gray-50">
-              {imagePreview ? (
-                <img
-                  src={imagePreview}
-                  alt="Preview"
-                  className="w-24 h-24 object-cover rounded-xl shadow-sm border border-gray-200"
-                />
-              ) : (
-                <div className="w-24 h-24 bg-gray-200 rounded-xl flex items-center justify-center text-3xl text-gray-400">
-                  📸
-                </div>
-              )}
-              <div className="flex-1">
-                <input
-                  type="file"
-                  accept="image/*"
-                  required
-                  onChange={handleImageChange}
-                  className="block w-full text-sm text-gray-600 file:mr-4 file:py-2.5 file:px-6 file:rounded-full file:border-0 file:text-sm file:font-bold file:bg-red-100 file:text-red-700 hover:file:bg-red-200 cursor-pointer transition-colors"
-                />
-                <p className="text-xs text-gray-500 mt-2">
-                  Recommended: High resolution landscape image (PNG, JPG).
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Form Actions */}
-        <div className="pt-8 flex items-center justify-end gap-4 border-t border-gray-200">
-          <button
-            type="button"
-            onClick={onCancel}
-            disabled={loading}
-            className="px-6 py-3 text-gray-700 font-bold hover:bg-gray-100 rounded-xl transition-colors"
+        {/* Auto Fetched Read-Only Location */}
+        <div className="flex items-start gap-3 text-gray-700 py-4">
+          <svg
+            className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
           >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            disabled={loading}
-            className="px-8 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl transition-all shadow-md hover:shadow-lg disabled:opacity-70 disabled:cursor-not-allowed flex items-center gap-2"
-          >
-            {loading ? (
-              <>
-                <svg
-                  className="animate-spin -ml-1 mr-2 h-5 w-5 text-white"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  ></circle>
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  ></path>
-                </svg>
-                Creating Profile...
-              </>
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+            />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+            />
+          </svg>
+          <p className="text-sm leading-relaxed">
+            {loadingLocation ? (
+              <span className="animate-pulse text-gray-400">
+                Locating your restaurant...
+              </span>
+            ) : location ? (
+              location.formattedAddress
             ) : (
-              "Create Profile"
+              <span className="text-red-500">
+                Location not available. Please allow access.
+              </span>
             )}
-          </button>
+          </p>
         </div>
+
+        {/* Submit Button */}
+        <button
+          type="submit"
+          disabled={loading || loadingLocation || !location}
+          className="w-full py-3.5 bg-[#df3b4c] hover:bg-red-700 text-white font-medium rounded-lg transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed mt-2"
+        >
+          {loading ? "Adding..." : "Add Restaurant"}
+        </button>
+
+        {/* Optional Cancel Button (If needed based on parent structure) */}
+        <button
+          type="button"
+          onClick={onCancel}
+          className="w-full py-2 text-gray-500 hover:text-gray-700 font-medium text-sm text-center"
+        >
+          Cancel
+        </button>
       </form>
     </div>
   );
