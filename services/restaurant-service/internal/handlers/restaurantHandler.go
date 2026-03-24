@@ -33,6 +33,8 @@ func (h *RestaurantHandler) CheckHealth(w http.ResponseWriter, r *http.Request) 
 	})
 }
 
+// AddRestaurant adds a new restaurant
+// ================================================================================
 func (h *RestaurantHandler) AddRestaurant(w http.ResponseWriter, r *http.Request) {
 	email := r.Context().Value(middleware.UserContextKey).(*token.Payload).User.Email
 
@@ -107,4 +109,29 @@ func (h *RestaurantHandler) AddRestaurant(w http.ResponseWriter, r *http.Request
 	}
 
 	helper.WriteJSON(w, http.StatusCreated, restaurant)
+}
+
+// GetRestaurant gets a single restaurant
+// ================================================================================
+func (h *RestaurantHandler) GetRestaurant(w http.ResponseWriter, r *http.Request) {
+	email := r.Context().Value(middleware.UserContextKey).(*token.Payload).User.Email
+
+	// get restaurant
+	exists, err := h.srv.CheckIfOwnerHasRestaurant(r.Context(), email)
+	if err != nil {
+		helper.WriteJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
+	if !exists {
+		helper.WriteJSON(w, http.StatusNotFound, map[string]string{"error": "restaurant not found"})
+		return
+	}
+
+	restaurant, err := h.srv.GetRestaurant(r.Context(), email)
+	if err != nil {
+		helper.WriteJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
+
+	helper.WriteJSON(w, http.StatusOK, restaurant)
 }

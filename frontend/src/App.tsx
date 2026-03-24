@@ -10,27 +10,42 @@ import { Toaster } from "react-hot-toast";
 import Account from "./Pages/Account";
 
 import Navbar from "./components/Navbar";
+import { useAuth } from "./context/useAuth";
+import Restaurant from "./Pages/Restaurant";
 
 // separate component so useLocation works inside BrowserRouter
 function Layout() {
   const location = useLocation();
-  const hideNavbar = ["/login", "/select-role"].includes(location.pathname);
+  const { user } = useAuth();
+
+  const hideNavbar =
+    ["/login", "/select-role"].includes(location.pathname) ||
+    user?.role === "restaurant_owner";
 
   return (
     <>
       {!hideNavbar && <Navbar />}
+
       <Routes>
         <Route element={<PublicRoute />}>
           <Route path="/login" element={<Login />} />
         </Route>
+
         <Route element={<ProtectedRoute />}>
           <Route path="/select-role" element={<SelectRole />} />
           <Route path="/account" element={<Account />} />
         </Route>
+
         <Route element={<RoleProtectedRoute />}>
-          <Route path="/" element={<Home />} />
+          <Route
+            path="/"
+            element={
+              user?.role === "restaurant_owner" ? <Restaurant /> : <Home />
+            }
+          />
         </Route>
       </Routes>
+
       <Toaster />
     </>
   );

@@ -1,5 +1,11 @@
+// backend
 add custom error messages for utils and restaurants
 also understand flow for dev env
 make openapi generator or api docs
 change service name in cmd/service/main.go
 context must be added to restaurant and utils service for image upload
+
+// frontend
+change fetch to axios
+change backendUrl to auth service url 
+add validation and styling for phone number for restaurant create page

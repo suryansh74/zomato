@@ -11,14 +11,20 @@ type RestaurantService struct {
 	repo repositories.RestaurantRepository
 }
 
+// NewRestaurantService constructor for restaurantService
+// ================================================================================
 func NewRestaurantService(repo repositories.RestaurantRepository) *RestaurantService {
 	return &RestaurantService{repo: repo}
 }
 
+// CheckIfOwnerHasRestaurant
+// ================================================================================
 func (s *RestaurantService) CheckIfOwnerHasRestaurant(ctx context.Context, email string) (bool, error) {
 	return s.repo.CheckIfOwnerHasRestaurant(ctx, email)
 }
 
+// CreateRestaurant
+// ================================================================================
 func (s *RestaurantService) CreateRestaurant(ctx context.Context, ownerEmail string, req *models.RestaurantRequest) (*models.Restaurant, error) {
 	restaurant := &models.Restaurant{
 		Name:        req.Name,
@@ -35,4 +41,10 @@ func (s *RestaurantService) CreateRestaurant(ctx context.Context, ownerEmail str
 		},
 	}
 	return s.repo.CreateRestaurant(ctx, restaurant)
+}
+
+// GetRestaurant
+// ================================================================================
+func (s *RestaurantService) GetRestaurant(ctx context.Context, email string) (*models.Restaurant, error) {
+	return s.repo.GetRestaurant(ctx, email)
 }

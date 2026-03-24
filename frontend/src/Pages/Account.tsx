@@ -1,5 +1,5 @@
 import { useAuth } from "@/context/useAuth";
-import { backendUrl } from "@/lib/config";
+import { authServiceUrl } from "@/lib/config";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -22,7 +22,7 @@ const Account = () => {
   const navigate = useNavigate();
 
   const logout = async () => {
-    await fetch(`${backendUrl}/auth/logout`, {
+    await fetch(`${authServiceUrl}/auth/logout`, {
       method: "POST",
       credentials: "include",
     });

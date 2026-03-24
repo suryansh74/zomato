@@ -25,5 +25,6 @@ func (s *Server) setupRoutes() {
 		r.Use(middleware.AuthMiddleware(s.tokenMaker))
 		r.Use(restaurantMiddleware.IsRestaurantOwner())
 		r.Post("/api/restaurant/create", restaurantHandler.AddRestaurant)
+		r.Get("/api/restaurant/read", restaurantHandler.GetRestaurant)
 	})
 }

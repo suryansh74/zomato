@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import type { Role } from "../types/types";
 import { Button } from "@/components/ui/button";
-import { backendUrl } from "@/lib/config";
+import { authServiceUrl } from "@/lib/config";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -51,7 +51,7 @@ export default function SelectRole() {
 
   const addRole = async () => {
     try {
-      const res = await fetch(`${backendUrl}/auth/add_role`, {
+      const res = await fetch(`${authServiceUrl}/auth/add_role`, {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },

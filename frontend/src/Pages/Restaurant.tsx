@@ -1,0 +1,124 @@
+import { useState, useEffect, useCallback } from "react";
+import axios from "axios";
+import { restaurantServiceUrl } from "@/lib/config";
+import type { Restaurant as RestaurantType } from "@/types/types";
+import MyRestaurant from "@/components/Restaurant/MyRestaurant";
+import { CreateRestaurantForm } from "@/components/Restaurant/CreateRestaurantForm";
+
+export default function Restaurant() {
+  const [restaurant, setRestaurant] = useState<RestaurantType | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isCreating, setIsCreating] = useState(false);
+
+  // We wrap this in useCallback so we can pass it to the Create form to trigger a refresh
+  const fetchMyRestaurant = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const res = await axios.get<{ data: RestaurantType }>(
+        `${restaurantServiceUrl}/restaurant/read`,
+        { withCredentials: true },
+      );
+
+      // Adjust based on your API response structure.
+      // Assuming res.data is the actual restaurant object based on standard Go helper
+      setRestaurant(res.data.data ?? res.data);
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        // Intercept 404 (No Restaurant Found) so we can show the Create Prompt
+        if (err.response?.status === 404) {
+          setRestaurant(null);
+          setError(null);
+        } else {
+          setError(err.response?.data?.error ?? "Failed to fetch restaurant");
+        }
+      } else {
+        setError("An unexpected error occurred.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchMyRestaurant();
+  }, [fetchMyRestaurant]);
+
+  // Handle successful creation
+  const handleSuccess = () => {
+    setIsCreating(false);
+    fetchMyRestaurant(); // Refresh the data
+  };
+
+  // UI States
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen bg-gray-50">
+        <div className="animate-pulse text-red-600 font-semibold text-xl">
+          Loading dashboard...
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="max-w-3xl mx-auto mt-12 p-6 bg-red-50 border-l-4 border-red-600 text-red-800 rounded-lg shadow-sm">
+        <h3 className="font-bold text-lg mb-2">Error Loading Dashboard</h3>
+        <p>{error}</p>
+        <button
+          onClick={fetchMyRestaurant}
+          className="mt-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+        >
+          Try Again
+        </button>
+      </div>
+    );
+  }
+
+  // If user doesn't have a restaurant, decide whether to show the form or the prompt
+  if (!restaurant) {
+    if (isCreating) {
+      return (
+        <div className="min-h-screen bg-gray-50 py-12 px-4">
+          <CreateRestaurantForm
+            onSuccess={handleSuccess}
+            onCancel={() => setIsCreating(false)}
+          />
+        </div>
+      );
+    }
+
+    return (
+      <div className="min-h-screen bg-gray-50 py-20 px-4">
+        <div className="max-w-2xl mx-auto bg-white border border-gray-200 rounded-2xl shadow-sm p-12 text-center">
+          <div className="w-20 h-20 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto mb-6 text-4xl shadow-inner">
+            🍽️
+          </div>
+          <h2 className="text-3xl font-extrabold text-gray-900 mb-4">
+            Welcome to Your Dashboard
+          </h2>
+          <p className="text-gray-500 text-lg mb-10 max-w-lg mx-auto">
+            You haven't set up a restaurant profile yet. Create one now to start
+            managing your menu, orders, and business details.
+          </p>
+          <button
+            onClick={() => setIsCreating(true)}
+            className="px-8 py-4 bg-red-600 hover:bg-red-700 text-white text-lg font-semibold rounded-xl transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5"
+          >
+            + Create Restaurant Profile
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // If restaurant exists, render it
+  return (
+    <div className="min-h-screen bg-gray-50 py-8 px-4">
+      <MyRestaurant restaurant={restaurant} />
+    </div>
+  );
+}
