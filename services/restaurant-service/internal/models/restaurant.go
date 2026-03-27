@@ -16,6 +16,7 @@ type Restaurant struct {
 	IsVerified   bool          `json:"is_verified" bson:"is_verified"`
 	AutoLocation GeoJSONPoint  `json:"auto_location" bson:"auto_location" validate:"required"`
 	IsOpen       bool          `json:"is_open"     bson:"is_open"`
+	DistanceKm   *float64      `json:"distance_km,omitempty" bson:"distanceKm,omitempty"`
 	CreatedAt    time.Time     `json:"created_at"  bson:"created_at"`
 	UpdatedAt    time.Time     `json:"updated_at"  bson:"updated_at"`
 }

@@ -23,10 +23,12 @@ func (s *Server) setupRoutes() {
 	menuService := services.NewMenuService(menuRepository)
 	menuHandler := handlers.NewMenuHandler(menuService, restaurantService, utilsClient)
 
-	// health check
+	// public routes
 	s.router.Get("/api/restaurant/health", restaurantHandler.CheckHealth)
+	s.router.Get("/api/restaurant/nearby", restaurantHandler.GetNearbyRestaurants)
+	s.router.Get("/api/restaurant/{id}", restaurantHandler.GetRestaurantByID)
 
-	// protected route
+	// protected route for seller
 	s.router.Group(func(r chi.Router) {
 		r.Use(middleware.AuthMiddleware(s.tokenMaker))
 		r.Use(restaurantMiddleware.IsRestaurantOwner())

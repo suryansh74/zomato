@@ -35,6 +35,7 @@ export interface Restaurant {
     coordinates: [number, number]; // [longitude, latitude]
     formatted_address: string;
   };
+  distance_km: number;
   is_open: boolean;
   created_at: string;
   updated_at: string;

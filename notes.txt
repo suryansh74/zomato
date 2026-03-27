@@ -20,3 +20,4 @@ button then inside of that button should also change like Add to Adding...
 8. add validation 
 9. add tool tip
 10. instead of showing alert message use pop up model of shadcn card
+11. fresh key should be removed from restaurant page
