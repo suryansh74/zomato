@@ -26,6 +26,10 @@ func (s *Server) setupRoutes() {
 	cartService := services.NewCartService(cartRepository)
 	cartHandler := handlers.NewCartHandler(cartService, restaurantService, menuService)
 
+	addressRepository := repositories.NewAddressRepository(s.client, s.cfg.DBName, "addresses")
+	addressService := services.NewAddressService(addressRepository)
+	addressHandler := handlers.NewAddressHandler(addressService)
+
 	// Health check can remain entirely public so your infrastructure (like AWS/Docker) can ping it
 	s.router.Get("/api/restaurant/health", restaurantHandler.CheckHealth)
 
@@ -44,6 +48,10 @@ func (s *Server) setupRoutes() {
 		r.Get("/api/cart", cartHandler.FetchCart)
 		r.Put("/api/cart/update", cartHandler.UpdateCartItem) // ✅ NEW
 		r.Delete("/api/cart/clear", cartHandler.ClearCart)
+
+		r.Post("/api/address", addressHandler.AddAddress)
+		r.Get("/api/address", addressHandler.GetMyAddresses)
+		r.Delete("/api/address/{id}", addressHandler.DeleteAddress)
 
 		// ==========================================
 		// TIER 2: SELLER ROUTES (Owners Only)

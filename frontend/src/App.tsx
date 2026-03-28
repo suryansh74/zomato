@@ -46,9 +46,9 @@ function Layout() {
               user?.role === "restaurant_owner" ? <Restaurant /> : <Home />
             }
           />
+          <Route path="/restaurant/:id" element={<CustomerRestaurant />} />
+          <Route path="/cart" element={<Cart />} />
         </Route>
-        <Route path="/restaurant/:id" element={<CustomerRestaurant />} />
-        <Route path="/cart" element={<Cart />} />
       </Routes>
 
       <Toaster />
