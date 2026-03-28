@@ -15,6 +15,7 @@ import Restaurant from "./Pages/Restaurant";
 import CustomerRestaurant from "./components/Restaurant/CustomerRestaurant";
 import CartProvider from "./context/CartProvider";
 import Cart from "./components/Restaurant/Cart";
+import AddAddressPage from "./Pages/Address";
 
 // separate component so useLocation works inside BrowserRouter
 function Layout() {
@@ -47,6 +48,7 @@ function Layout() {
             }
           />
           <Route path="/restaurant/:id" element={<CustomerRestaurant />} />
+          <Route path="/address" element={<AddAddressPage />} />
           <Route path="/cart" element={<Cart />} />
         </Route>
       </Routes>
