@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"context"
+	"log"
 	"time"
 
 	"go.mongodb.org/mongo-driver/v2/bson"
@@ -27,6 +28,7 @@ type menuRepository struct {
 }
 
 func NewMenuRepository(db *mongo.Client, dbName, collectionName string) MenuRepository {
+	log.Println("Initializing MenuRepository")
 	return &menuRepository{
 		db:             db,
 		dbName:         dbName,
@@ -35,62 +37,82 @@ func NewMenuRepository(db *mongo.Client, dbName, collectionName string) MenuRepo
 }
 
 func (r *menuRepository) CreateMenuItem(ctx context.Context, item *models.MenuItem) (*models.MenuItem, error) {
+	log.Println("Repo: CreateMenuItem called for:", item.Name)
+
 	item.CreatedAt = time.Now()
 	item.UpdatedAt = time.Now()
 
 	coll := r.db.Database(r.dbName).Collection(r.collectionName)
 	result, err := coll.InsertOne(ctx, item)
 	if err != nil {
+		log.Println("Error inserting menu item:", err)
 		return nil, apperr.ErrInternalServer
 	}
 
 	item.ID = result.InsertedID.(bson.ObjectID)
+	log.Println("Menu item created with ID:", item.ID.Hex())
+
 	return item, nil
 }
 
 func (r *menuRepository) GetMenuItemsByRestaurant(ctx context.Context, restaurantID string) ([]models.MenuItem, error) {
+	log.Println("Repo: GetMenuItemsByRestaurant called for restaurantID:", restaurantID)
+
 	coll := r.db.Database(r.dbName).Collection(r.collectionName)
 
 	cursor, err := coll.Find(ctx, bson.D{{Key: "restaurant_id", Value: restaurantID}})
 	if err != nil {
+		log.Println("Error fetching menu items:", err)
 		return nil, apperr.ErrInternalServer
 	}
 	defer cursor.Close(ctx)
 
 	var items []models.MenuItem
 	if err = cursor.All(ctx, &items); err != nil {
+		log.Println("Error decoding menu items:", err)
 		return nil, apperr.ErrInternalServer
 	}
 
-	// Return empty slice instead of null if no items found
 	if items == nil {
 		items = []models.MenuItem{}
 	}
 
+	log.Println("Menu items fetched count:", len(items))
 	return items, nil
 }
 
 func (r *menuRepository) GetMenuItemByID(ctx context.Context, id string, restaurantID string) (*models.MenuItem, error) {
+	log.Println("Repo: GetMenuItemByID called with id:", id, "restaurantID:", restaurantID)
+
 	objID, err := bson.ObjectIDFromHex(id)
 	if err != nil {
+		log.Println("Invalid ObjectID:", err)
 		return nil, apperr.ErrInvalidID
 	}
 
 	coll := r.db.Database(r.dbName).Collection(r.collectionName)
 	var item models.MenuItem
+
 	err = coll.FindOne(ctx, bson.M{"_id": objID, "restaurant_id": restaurantID}).Decode(&item)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
+			log.Println("Menu item not found for id:", id)
 			return nil, apperr.ErrMenuNotFound
 		}
+		log.Println("Error fetching menu item:", err)
 		return nil, apperr.ErrInternalServer
 	}
+
+	log.Println("Menu item fetched:", item.ID.Hex())
 	return &item, nil
 }
 
 func (r *menuRepository) UpdateMenuItem(ctx context.Context, id string, restaurantID string, req *models.UpdateMenuItemRequest) (*models.MenuItem, error) {
+	log.Println("Repo: UpdateMenuItem called with id:", id, "restaurantID:", restaurantID)
+
 	objID, err := bson.ObjectIDFromHex(id)
 	if err != nil {
+		log.Println("Invalid ObjectID:", err)
 		return nil, apperr.ErrInvalidID
 	}
 
@@ -114,10 +136,13 @@ func (r *menuRepository) UpdateMenuItem(ctx context.Context, id string, restaura
 	}
 
 	if len(updateDocs) == 0 {
-		return nil, nil // Nothing to update
+		log.Println("No fields to update for id:", id)
+		return nil, nil
 	}
 
 	updateDocs["updated_at"] = time.Now()
+	log.Println("Update fields:", updateDocs)
+
 	update := bson.M{"$set": updateDocs}
 
 	opts := options.FindOneAndUpdate().SetReturnDocument(options.After)
@@ -126,29 +151,38 @@ func (r *menuRepository) UpdateMenuItem(ctx context.Context, id string, restaura
 	err = coll.FindOneAndUpdate(ctx, bson.M{"_id": objID, "restaurant_id": restaurantID}, update, opts).Decode(&updated)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
+			log.Println("Menu item not found for update:", id)
 			return nil, apperr.ErrMenuNotFound
 		}
+		log.Println("Error updating menu item:", err)
 		return nil, apperr.ErrInternalServer
 	}
 
+	log.Println("Menu item updated:", updated.ID.Hex())
 	return &updated, nil
 }
 
 func (r *menuRepository) DeleteMenuItem(ctx context.Context, id string, restaurantID string) error {
+	log.Println("Repo: DeleteMenuItem called with id:", id, "restaurantID:", restaurantID)
+
 	objID, err := bson.ObjectIDFromHex(id)
 	if err != nil {
+		log.Println("Invalid ObjectID:", err)
 		return apperr.ErrInvalidID
 	}
 
 	coll := r.db.Database(r.dbName).Collection(r.collectionName)
 	result, err := coll.DeleteOne(ctx, bson.M{"_id": objID, "restaurant_id": restaurantID})
 	if err != nil {
+		log.Println("Error deleting menu item:", err)
 		return apperr.ErrInternalServer
 	}
 
 	if result.DeletedCount == 0 {
+		log.Println("Menu item not found for deletion:", id)
 		return apperr.ErrMenuNotFound
 	}
 
+	log.Println("Menu item deleted successfully:", id)
 	return nil
 }

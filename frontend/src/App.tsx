@@ -12,6 +12,7 @@ import Account from "./Pages/Account";
 import Navbar from "./components/Navbar";
 import { useAuth } from "./context/useAuth";
 import Restaurant from "./Pages/Restaurant";
+import CustomerRestaurant from "./components/Restaurant/CustomerRestaurant";
 
 // separate component so useLocation works inside BrowserRouter
 function Layout() {
@@ -44,6 +45,7 @@ function Layout() {
             }
           />
         </Route>
+        <Route path="/restaurant/:id" element={<CustomerRestaurant />} />
       </Routes>
 
       <Toaster />

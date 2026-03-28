@@ -53,8 +53,9 @@ func (r *restaurantRepository) CheckIfOwnerHasRestaurant(ctx context.Context, em
 		return "", true, apperr.ErrInternalServer
 	}
 
-	log.Println("Restaurant exists with ID:", result.ID.String())
-	return result.ID.String(), true, nil
+	// FIX: Use .Hex() instead of .String()
+	log.Println("Restaurant exists with ID:", result.ID.Hex())
+	return result.ID.Hex(), true, nil
 }
 
 func (r *restaurantRepository) CreateRestaurant(ctx context.Context, restaurant *models.Restaurant) (*models.Restaurant, error) {
