@@ -52,3 +52,20 @@ export interface MenuItem {
   created_at: string;
   updated_at: string;
 }
+
+export interface PopulatedCartItem {
+  _id: string;
+  userId: string;
+  restaurantId: Restaurant;
+  itemId: MenuItem;
+  quantity: number;
+}
+
+export interface CartContextType {
+  cartLength: number;
+  cartItems: PopulatedCartItem[];
+  subtotal: number;
+  isCartLoading: boolean; // ✅ NEW
+  setCartLength: React.Dispatch<React.SetStateAction<number>>;
+  fetchCart: () => Promise<void>;
+}

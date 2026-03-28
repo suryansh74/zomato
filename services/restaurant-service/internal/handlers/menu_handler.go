@@ -33,17 +33,19 @@ func NewMenuHandler(menuSrv *services.MenuService, restaurantSrv *services.Resta
 func (h *MenuHandler) AddMenuItem(w http.ResponseWriter, r *http.Request) {
 	log.Println("Handler: AddMenuItem called")
 
-	email := r.Context().Value(middleware.UserContextKey).(*token.Payload).User.Email
-	log.Println("AddMenuItem for email:", email)
+	// ✅ Extract ID instead of Email
+	ownerID := r.Context().Value(middleware.UserContextKey).(*token.Payload).User.ID
+	log.Println("AddMenuItem for ownerID:", ownerID)
 
-	restaurantID, exists, err := h.restaurantSrv.CheckIfOwnerHasRestaurant(r.Context(), email)
+	// ✅ Pass ownerID to check ownership
+	restaurantID, exists, err := h.restaurantSrv.CheckIfOwnerHasRestaurant(r.Context(), ownerID)
 	if err != nil {
 		log.Println("Error checking restaurant ownership:", err)
 		helper.WriteJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
 	}
 	if !exists {
-		log.Println("No restaurant found for email:", email)
+		log.Println("No restaurant found for ownerID:", ownerID)
 		helper.WriteJSON(w, http.StatusForbidden, map[string]string{"error": "you must create a restaurant first before adding menu items"})
 		return
 	}
@@ -131,17 +133,18 @@ func (h *MenuHandler) AddMenuItem(w http.ResponseWriter, r *http.Request) {
 func (h *MenuHandler) GetMenuItems(w http.ResponseWriter, r *http.Request) {
 	log.Println("Handler: GetMenuItems called")
 
-	email := r.Context().Value(middleware.UserContextKey).(*token.Payload).User.Email
-	log.Println("Fetching menu items for email:", email)
+	// ✅ Extract ID instead of Email
+	ownerID := r.Context().Value(middleware.UserContextKey).(*token.Payload).User.ID
+	log.Println("Fetching menu items for ownerID:", ownerID)
 
-	restaurantID, exists, err := h.restaurantSrv.CheckIfOwnerHasRestaurant(r.Context(), email)
+	restaurantID, exists, err := h.restaurantSrv.CheckIfOwnerHasRestaurant(r.Context(), ownerID)
 	if err != nil {
 		log.Println("Error checking restaurant:", err)
 		helper.WriteJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
 	}
 	if !exists {
-		log.Println("Restaurant not found for email:", email)
+		log.Println("Restaurant not found for ownerID:", ownerID)
 		helper.WriteJSON(w, http.StatusNotFound, map[string]string{"error": "restaurant not found"})
 		return
 	}
@@ -163,12 +166,13 @@ func (h *MenuHandler) GetMenuItems(w http.ResponseWriter, r *http.Request) {
 func (h *MenuHandler) GetMenuItem(w http.ResponseWriter, r *http.Request) {
 	log.Println("Handler: GetMenuItem called")
 
-	email := r.Context().Value(middleware.UserContextKey).(*token.Payload).User.Email
+	// ✅ Extract ID instead of Email
+	ownerID := r.Context().Value(middleware.UserContextKey).(*token.Payload).User.ID
 	id := chi.URLParam(r, "id")
 
-	log.Println("Fetching menu item id:", id, "for email:", email)
+	log.Println("Fetching menu item id:", id, "for ownerID:", ownerID)
 
-	restaurantID, exists, err := h.restaurantSrv.CheckIfOwnerHasRestaurant(r.Context(), email)
+	restaurantID, exists, err := h.restaurantSrv.CheckIfOwnerHasRestaurant(r.Context(), ownerID)
 	if err != nil || !exists {
 		log.Println("Unauthorized access for menu item:", id)
 		helper.WriteJSON(w, http.StatusForbidden, map[string]string{"error": "unauthorized"})
@@ -190,12 +194,13 @@ func (h *MenuHandler) GetMenuItem(w http.ResponseWriter, r *http.Request) {
 func (h *MenuHandler) UpdateMenuItem(w http.ResponseWriter, r *http.Request) {
 	log.Println("Handler: UpdateMenuItem called")
 
-	email := r.Context().Value(middleware.UserContextKey).(*token.Payload).User.Email
+	// ✅ Extract ID instead of Email
+	ownerID := r.Context().Value(middleware.UserContextKey).(*token.Payload).User.ID
 	id := chi.URLParam(r, "id")
 
-	log.Println("Updating menu item id:", id, "for email:", email)
+	log.Println("Updating menu item id:", id, "for ownerID:", ownerID)
 
-	restaurantID, exists, err := h.restaurantSrv.CheckIfOwnerHasRestaurant(r.Context(), email)
+	restaurantID, exists, err := h.restaurantSrv.CheckIfOwnerHasRestaurant(r.Context(), ownerID)
 	if err != nil || !exists {
 		log.Println("Unauthorized update attempt:", id)
 		helper.WriteJSON(w, http.StatusForbidden, map[string]string{"error": "unauthorized"})
@@ -269,12 +274,13 @@ func (h *MenuHandler) UpdateMenuItem(w http.ResponseWriter, r *http.Request) {
 func (h *MenuHandler) DeleteMenuItem(w http.ResponseWriter, r *http.Request) {
 	log.Println("Handler: DeleteMenuItem called")
 
-	email := r.Context().Value(middleware.UserContextKey).(*token.Payload).User.Email
+	// ✅ Extract ID instead of Email
+	ownerID := r.Context().Value(middleware.UserContextKey).(*token.Payload).User.ID
 	id := chi.URLParam(r, "id")
 
-	log.Println("Deleting menu item id:", id, "for email:", email)
+	log.Println("Deleting menu item id:", id, "for ownerID:", ownerID)
 
-	restaurantID, exists, err := h.restaurantSrv.CheckIfOwnerHasRestaurant(r.Context(), email)
+	restaurantID, exists, err := h.restaurantSrv.CheckIfOwnerHasRestaurant(r.Context(), ownerID)
 	if err != nil || !exists {
 		log.Println("Unauthorized delete attempt:", id)
 		helper.WriteJSON(w, http.StatusForbidden, map[string]string{"error": "unauthorized"})

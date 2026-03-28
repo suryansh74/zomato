@@ -6,6 +6,7 @@
 5. context must be added to restaurant and utils service for image upload
 6. add logic so that after image update or deletion of object it should delete image
 in cloudinary
+7. collection names should be refactored in .env
 
 // frontend
 1.change fetch to axios

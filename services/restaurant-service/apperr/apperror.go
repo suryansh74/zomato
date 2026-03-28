@@ -7,4 +7,5 @@ var (
 	ErrRestaurantNotFound = errors.New("restaurant not found")
 	ErrMenuNotFound       = errors.New("menu not found")
 	ErrInvalidID          = errors.New("invalid id")
+	ErrCartConflict       = errors.New("cart conflict")
 )

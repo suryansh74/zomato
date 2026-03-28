@@ -25,12 +25,3 @@ type LoginRequest struct {
 type Role struct {
 	Role string `json:"role" validate:"required,oneof=customer restaurant_owner rider"`
 }
-
-// TokenUser is what gets embedded in the JWT payload
-// separate from LoginRequest since token needs role too
-type TokenUser struct {
-	Name  string `json:"name"`
-	Email string `json:"email"`
-	Image string `json:"image"`
-	Role  string `json:"role"`
-}

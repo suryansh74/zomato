@@ -14,10 +14,10 @@ import (
 )
 
 type RestaurantRepository interface {
-	CheckIfOwnerHasRestaurant(ctx context.Context, email string) (string, bool, error)
+	CheckIfOwnerHasRestaurant(ctx context.Context, ownerID string) (string, bool, error) // ✅ Changed to ownerID
 	CreateRestaurant(ctx context.Context, restaurant *models.Restaurant) (*models.Restaurant, error)
-	GetRestaurant(ctx context.Context, email string) (*models.Restaurant, error)
-	UpdateRestaurant(ctx context.Context, email string, req *models.UpdateRestaurantRequest) (*models.Restaurant, error)
+	GetRestaurant(ctx context.Context, ownerID string) (*models.Restaurant, error)                                         // ✅ Changed to ownerID
+	UpdateRestaurant(ctx context.Context, ownerID string, req *models.UpdateRestaurantRequest) (*models.Restaurant, error) // ✅ Changed to ownerID
 	GetNearbyRestaurants(ctx context.Context, lat, lon, radius float64, search string, isOpenFilter *bool) ([]models.Restaurant, error)
 	GetRestaurantByID(ctx context.Context, id string) (*models.Restaurant, error)
 }
@@ -37,23 +37,22 @@ func NewRestaurantRepository(db *mongo.Client, dbName, collectionName string) Re
 	}
 }
 
-func (r *restaurantRepository) CheckIfOwnerHasRestaurant(ctx context.Context, email string) (string, bool, error) {
-	log.Println("CheckIfOwnerHasRestaurant called with email:", email)
+func (r *restaurantRepository) CheckIfOwnerHasRestaurant(ctx context.Context, ownerID string) (string, bool, error) {
+	log.Println("CheckIfOwnerHasRestaurant called with ownerID:", ownerID)
 
 	coll := r.db.Database(r.dbName).Collection(r.collectionName)
 	var result models.Restaurant
 
-	err := coll.FindOne(ctx, bson.D{{Key: "owner_email", Value: email}}).Decode(&result)
+	err := coll.FindOne(ctx, bson.D{{Key: "owner_id", Value: ownerID}}).Decode(&result) // ✅ Query by owner_id
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
-			log.Println("No restaurant found for email:", email)
+			log.Println("No restaurant found for ownerID:", ownerID)
 			return "", false, nil
 		}
 		log.Println("Error in CheckIfOwnerHasRestaurant:", err)
 		return "", true, apperr.ErrInternalServer
 	}
 
-	// FIX: Use .Hex() instead of .String()
 	log.Println("Restaurant exists with ID:", result.ID.Hex())
 	return result.ID.Hex(), true, nil
 }
@@ -77,16 +76,16 @@ func (r *restaurantRepository) CreateRestaurant(ctx context.Context, restaurant 
 	return restaurant, nil
 }
 
-func (r *restaurantRepository) GetRestaurant(ctx context.Context, email string) (*models.Restaurant, error) {
-	log.Println("GetRestaurant called with email:", email)
+func (r *restaurantRepository) GetRestaurant(ctx context.Context, ownerID string) (*models.Restaurant, error) {
+	log.Println("GetRestaurant called with ownerID:", ownerID)
 
 	coll := r.db.Database(r.dbName).Collection(r.collectionName)
 	var result models.Restaurant
 
-	err := coll.FindOne(ctx, bson.D{{Key: "owner_email", Value: email}}).Decode(&result)
+	err := coll.FindOne(ctx, bson.D{{Key: "owner_id", Value: ownerID}}).Decode(&result) // ✅ Query by owner_id
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
-			log.Println("Restaurant not found for email:", email)
+			log.Println("Restaurant not found for ownerID:", ownerID)
 			return nil, apperr.ErrRestaurantNotFound
 		}
 		log.Println("Error in GetRestaurant:", err)
@@ -97,8 +96,8 @@ func (r *restaurantRepository) GetRestaurant(ctx context.Context, email string) 
 	return &result, nil
 }
 
-func (r *restaurantRepository) UpdateRestaurant(ctx context.Context, email string, req *models.UpdateRestaurantRequest) (*models.Restaurant, error) {
-	log.Println("UpdateRestaurant called for email:", email)
+func (r *restaurantRepository) UpdateRestaurant(ctx context.Context, ownerID string, req *models.UpdateRestaurantRequest) (*models.Restaurant, error) {
+	log.Println("UpdateRestaurant called for ownerID:", ownerID)
 
 	coll := r.db.Database(r.dbName).Collection(r.collectionName)
 
@@ -120,7 +119,7 @@ func (r *restaurantRepository) UpdateRestaurant(ctx context.Context, email strin
 	opts := options.FindOneAndUpdate().SetReturnDocument(options.After)
 
 	var updated models.Restaurant
-	err := coll.FindOneAndUpdate(ctx, bson.D{{Key: "owner_email", Value: email}}, update, opts).Decode(&updated)
+	err := coll.FindOneAndUpdate(ctx, bson.D{{Key: "owner_id", Value: ownerID}}, update, opts).Decode(&updated) // ✅ Query by owner_id
 	if err != nil {
 		log.Println("Error updating restaurant:", err)
 		return nil, apperr.ErrInternalServer

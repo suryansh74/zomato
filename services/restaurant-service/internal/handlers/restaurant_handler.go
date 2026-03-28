@@ -39,23 +39,22 @@ func (h *RestaurantHandler) CheckHealth(w http.ResponseWriter, r *http.Request) 
 	})
 }
 
-// AddRestaurant adds a new restaurant
-// ================================================================================
 func (h *RestaurantHandler) AddRestaurant(w http.ResponseWriter, r *http.Request) {
 	log.Println("Handler: AddRestaurant called")
 
-	email := r.Context().Value(middleware.UserContextKey).(*token.Payload).User.Email
-	log.Println("AddRestaurant for email:", email)
+	// ✅ Extract ID instead of Email
+	ownerID := r.Context().Value(middleware.UserContextKey).(*token.Payload).User.ID
+	log.Println("AddRestaurant for ownerID:", ownerID)
 
 	// check duplicate
-	_, exists, err := h.srv.CheckIfOwnerHasRestaurant(r.Context(), email)
+	_, exists, err := h.srv.CheckIfOwnerHasRestaurant(r.Context(), ownerID) // ✅ Pass ownerID
 	if err != nil {
 		log.Println("Error checking existing restaurant:", err)
 		helper.WriteJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
 	}
 	if exists {
-		log.Println("Restaurant already exists for email:", email)
+		log.Println("Restaurant already exists for ownerID:", ownerID)
 		helper.WriteJSON(w, http.StatusConflict, map[string]string{"error": "you already have a restaurant"})
 		return
 	}
@@ -127,7 +126,7 @@ func (h *RestaurantHandler) AddRestaurant(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	restaurant, err := h.srv.CreateRestaurant(r.Context(), email, &req)
+	restaurant, err := h.srv.CreateRestaurant(r.Context(), ownerID, &req) // ✅ Pass ownerID
 	if err != nil {
 		log.Println("Error creating restaurant:", err)
 		helper.WriteJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
@@ -138,27 +137,26 @@ func (h *RestaurantHandler) AddRestaurant(w http.ResponseWriter, r *http.Request
 	helper.WriteJSON(w, http.StatusCreated, restaurant)
 }
 
-// GetRestaurant gets a single restaurant
-// ================================================================================
 func (h *RestaurantHandler) GetRestaurant(w http.ResponseWriter, r *http.Request) {
 	log.Println("Handler: GetRestaurant called")
 
-	email := r.Context().Value(middleware.UserContextKey).(*token.Payload).User.Email
-	log.Println("Fetching restaurant for email:", email)
+	// ✅ Extract ID instead of Email
+	ownerID := r.Context().Value(middleware.UserContextKey).(*token.Payload).User.ID
+	log.Println("Fetching restaurant for ownerID:", ownerID)
 
-	_, exists, err := h.srv.CheckIfOwnerHasRestaurant(r.Context(), email)
+	_, exists, err := h.srv.CheckIfOwnerHasRestaurant(r.Context(), ownerID) // ✅ Pass ownerID
 	if err != nil {
 		log.Println("Error checking restaurant existence:", err)
 		helper.WriteJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
 	}
 	if !exists {
-		log.Println("Restaurant not found for email:", email)
+		log.Println("Restaurant not found for ownerID:", ownerID)
 		helper.WriteJSON(w, http.StatusNotFound, map[string]string{"error": "restaurant not found"})
 		return
 	}
 
-	restaurant, err := h.srv.GetRestaurant(r.Context(), email)
+	restaurant, err := h.srv.GetRestaurant(r.Context(), ownerID) // ✅ Pass ownerID
 	if err != nil {
 		log.Println("Error fetching restaurant:", err)
 		helper.WriteJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
@@ -172,7 +170,8 @@ func (h *RestaurantHandler) GetRestaurant(w http.ResponseWriter, r *http.Request
 func (h *RestaurantHandler) UpdateRestaurant(w http.ResponseWriter, r *http.Request) {
 	log.Println("Handler: UpdateRestaurant called")
 
-	email := r.Context().Value(middleware.UserContextKey).(*token.Payload).User.Email
+	// ✅ Extract ID instead of Email
+	ownerID := r.Context().Value(middleware.UserContextKey).(*token.Payload).User.ID
 
 	var req models.UpdateRestaurantRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -181,9 +180,9 @@ func (h *RestaurantHandler) UpdateRestaurant(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	log.Println("Update request received for email:", email)
+	log.Println("Update request received for ownerID:", ownerID)
 
-	restaurant, err := h.srv.UpdateRestaurant(r.Context(), email, &req)
+	restaurant, err := h.srv.UpdateRestaurant(r.Context(), ownerID, &req) // ✅ Pass ownerID
 	if err != nil {
 		log.Println("Error updating restaurant:", err)
 		helper.WriteJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})

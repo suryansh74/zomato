@@ -12,34 +12,30 @@ type RestaurantService struct {
 	repo repositories.RestaurantRepository
 }
 
-// NewRestaurantService constructor for restaurantService
-// ================================================================================
 func NewRestaurantService(repo repositories.RestaurantRepository) *RestaurantService {
 	log.Println("Initializing RestaurantService")
 	return &RestaurantService{repo: repo}
 }
 
-// CheckIfOwnerHasRestaurant
-// ================================================================================
-func (s *RestaurantService) CheckIfOwnerHasRestaurant(ctx context.Context, email string) (string, bool, error) {
-	log.Println("Service: CheckIfOwnerHasRestaurant called with email:", email)
+// ✅ Changed email to ownerID
+func (s *RestaurantService) CheckIfOwnerHasRestaurant(ctx context.Context, ownerID string) (string, bool, error) {
+	log.Println("Service: CheckIfOwnerHasRestaurant called with ownerID:", ownerID)
 
-	id, exists, err := s.repo.CheckIfOwnerHasRestaurant(ctx, email)
+	id, exists, err := s.repo.CheckIfOwnerHasRestaurant(ctx, ownerID)
 
 	log.Println("Service: CheckIfOwnerHasRestaurant result -> id:", id, "exists:", exists, "error:", err)
 	return id, exists, err
 }
 
-// CreateRestaurant
-// ================================================================================
-func (s *RestaurantService) CreateRestaurant(ctx context.Context, ownerEmail string, req *models.RestaurantRequest) (*models.Restaurant, error) {
-	log.Println("Service: CreateRestaurant called for owner:", ownerEmail, "name:", req.Name)
+// ✅ Changed email to ownerID and assigned to OwnerID field
+func (s *RestaurantService) CreateRestaurant(ctx context.Context, ownerID string, req *models.RestaurantRequest) (*models.Restaurant, error) {
+	log.Println("Service: CreateRestaurant called for owner:", ownerID, "name:", req.Name)
 
 	restaurant := &models.Restaurant{
 		Name:        req.Name,
 		Description: req.Description,
 		Image:       req.Image,
-		OwnerEmail:  ownerEmail,
+		OwnerID:     ownerID, // ✅ CHANGED HERE
 		Phone:       req.Phone,
 		IsVerified:  false,
 		IsOpen:      false,
@@ -60,12 +56,11 @@ func (s *RestaurantService) CreateRestaurant(ctx context.Context, ownerEmail str
 	return result, nil
 }
 
-// GetRestaurant
-// ================================================================================
-func (s *RestaurantService) GetRestaurant(ctx context.Context, email string) (*models.Restaurant, error) {
-	log.Println("Service: GetRestaurant called with email:", email)
+// ✅ Changed email to ownerID
+func (s *RestaurantService) GetRestaurant(ctx context.Context, ownerID string) (*models.Restaurant, error) {
+	log.Println("Service: GetRestaurant called with ownerID:", ownerID)
 
-	result, err := s.repo.GetRestaurant(ctx, email)
+	result, err := s.repo.GetRestaurant(ctx, ownerID)
 	if err != nil {
 		log.Println("Service: GetRestaurant error:", err)
 		return nil, err
@@ -75,12 +70,11 @@ func (s *RestaurantService) GetRestaurant(ctx context.Context, email string) (*m
 	return result, nil
 }
 
-// UpdateRestaurant
-// ===============================================================================
-func (s *RestaurantService) UpdateRestaurant(ctx context.Context, email string, req *models.UpdateRestaurantRequest) (*models.Restaurant, error) {
-	log.Println("Service: UpdateRestaurant called for email:", email)
+// ✅ Changed email to ownerID
+func (s *RestaurantService) UpdateRestaurant(ctx context.Context, ownerID string, req *models.UpdateRestaurantRequest) (*models.Restaurant, error) {
+	log.Println("Service: UpdateRestaurant called for ownerID:", ownerID)
 
-	result, err := s.repo.UpdateRestaurant(ctx, email, req)
+	result, err := s.repo.UpdateRestaurant(ctx, ownerID, req)
 	if err != nil {
 		log.Println("Service: UpdateRestaurant error:", err)
 		return nil, err
@@ -103,7 +97,6 @@ func (s *RestaurantService) GetNearbyRestaurants(ctx context.Context, lat, lon, 
 	return result, nil
 }
 
-// GetRestaurantByID fetches a single restaurant for the customer view
 func (s *RestaurantService) GetRestaurantByID(ctx context.Context, id string) (*models.Restaurant, error) {
 	log.Println("Service: GetRestaurantByID called with id:", id)
 

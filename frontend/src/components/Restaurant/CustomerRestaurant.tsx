@@ -6,6 +6,7 @@ import { MapPin, Plus } from "lucide-react";
 
 import { restaurantServiceUrl } from "@/lib/config";
 import type { Restaurant, MenuItem } from "@/types/types";
+import { useCart } from "@/context/useCart";
 
 export default function CustomerRestaurant() {
   const { id } = useParams<{ id: string }>(); // Grabs the ID from the URL
@@ -13,6 +14,7 @@ export default function CustomerRestaurant() {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const { setCartLength, fetchCart } = useCart(); // <-- PULL IN SETTER
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
@@ -52,9 +54,43 @@ export default function CustomerRestaurant() {
     if (id) fetchData();
   }, [fetchData, id]);
 
-  const handleAddToCart = (item: MenuItem) => {
-    // TODO: Wire this up to your Global Cart Context later!
-    toast.success(`Added ${item.name} to cart!`);
+  const handleAddToCart = async (item: MenuItem) => {
+    if (!restaurant?.id) {
+      toast.error("Restaurant information is missing.");
+      return;
+    }
+
+    try {
+      const response = await axios.post(
+        `${restaurantServiceUrl}/add_to_cart`,
+        {
+          restaurantId: restaurant.id,
+          itemId: item.id,
+        },
+        {
+          withCredentials: true,
+        },
+      );
+
+      toast.success(response.data.message || `Added ${item.name} to cart!`);
+
+      // ✅ THE FIX: Tell the global CartProvider to pull the fresh data from the backend!
+      // This automatically updates the navbar number AND the cart items array simultaneously.
+      fetchCart();
+    } catch (error: any) {
+      console.error("Add to cart error:", error);
+
+      if (error.response?.status === 409) {
+        toast.error(
+          "You can order from only one restaurant at a time. Please clear your cart first.",
+          { duration: 5000 },
+        );
+      } else {
+        toast.error(
+          error.response?.data?.error || "Failed to add item to cart.",
+        );
+      }
+    }
   };
 
   if (loading) {

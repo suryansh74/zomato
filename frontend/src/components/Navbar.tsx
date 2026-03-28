@@ -1,4 +1,5 @@
 import { useAuth } from "@/context/useAuth";
+import { useCart } from "@/context/useCart"; // <-- NEW IMPORT
 import { MapPin, Search, ShoppingCart } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useLocation, useSearchParams } from "react-router-dom";
@@ -11,6 +12,7 @@ export default function Navbar() {
   const [search, setSearch] = useState(searchParams.get("search") || "");
 
   const { city } = useAuth();
+  const { cartLength } = useCart(); // <-- GET CART LENGTH
 
   useEffect(() => {
     if (!isHome) return;
@@ -41,9 +43,13 @@ export default function Navbar() {
           <div className="flex items-center gap-6">
             <Link to="/cart" className="relative group">
               <ShoppingCart className="text-gray-700 w-6 h-6 group-hover:text-red-500 transition" />
-              <span className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white">
-                0
-              </span>
+
+              {/* DYNAMIC CART BADGE */}
+              {cartLength > 0 && (
+                <span className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white">
+                  {cartLength}
+                </span>
+              )}
             </Link>
             <Link
               to="/account"
@@ -60,13 +66,11 @@ export default function Navbar() {
         <div className="bg-gray-50 py-4">
           <div className="max-w-4xl mx-auto px-4">
             <div className="flex items-center bg-white rounded-xl shadow-sm overflow-hidden">
-              {/* Location */}
               <div className="flex items-center gap-2 px-4 border-r min-w-[180px]">
                 <MapPin className="text-red-500 w-5 h-5" />
                 <span className="text-gray-600 text-sm truncate">{city}</span>
               </div>
 
-              {/* Search */}
               <div className="flex items-center flex-1 px-4">
                 <Search className="text-gray-400 w-5 h-5 mr-2" />
                 <input

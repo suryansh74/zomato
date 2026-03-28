@@ -7,18 +7,18 @@ import (
 )
 
 type Restaurant struct {
-	ID           bson.ObjectID `json:"id"          bson:"_id,omitempty"`
-	Name         string        `json:"name"        bson:"name"         validate:"required,min=2,max=100"`
-	Description  string        `json:"description" bson:"description"  validate:"omitempty,max=500"`
-	Image        string        `json:"image"       bson:"image"        validate:"required,url"`
-	OwnerEmail   string        `json:"owner_email"    bson:"owner_email"     validate:"required,email"`
-	Phone        string        `json:"phone"       bson:"phone"        validate:"required,e164"`
-	IsVerified   bool          `json:"is_verified" bson:"is_verified"`
-	AutoLocation GeoJSONPoint  `json:"auto_location" bson:"auto_location" validate:"required"`
-	IsOpen       bool          `json:"is_open"     bson:"is_open"`
+	ID           bson.ObjectID `json:"id"                bson:"_id,omitempty"`
+	Name         string        `json:"name"              bson:"name"             validate:"required,min=2,max=100"`
+	Description  string        `json:"description"       bson:"description"      validate:"omitempty,max=500"`
+	Image        string        `json:"image"             bson:"image"            validate:"required,url"`
+	OwnerID      string        `json:"owner_id"          bson:"owner_id"         validate:"required"`
+	Phone        string        `json:"phone"             bson:"phone"            validate:"required,e164"`
+	IsVerified   bool          `json:"is_verified"       bson:"is_verified"`
+	AutoLocation GeoJSONPoint  `json:"auto_location"     bson:"auto_location"    validate:"required"`
+	IsOpen       bool          `json:"is_open"           bson:"is_open"`
 	DistanceKm   *float64      `json:"distance_km,omitempty" bson:"distanceKm,omitempty"`
-	CreatedAt    time.Time     `json:"created_at"  bson:"created_at"`
-	UpdatedAt    time.Time     `json:"updated_at"  bson:"updated_at"`
+	CreatedAt    time.Time     `json:"created_at"        bson:"created_at"`
+	UpdatedAt    time.Time     `json:"updated_at"        bson:"updated_at"`
 }
 
 type GeoJSONPoint struct {
@@ -45,12 +45,12 @@ type UpdateRestaurantRequest struct {
 
 type MenuItem struct {
 	ID           bson.ObjectID `json:"id"             bson:"_id,omitempty"`
-	RestaurantID string        `json:"restaurant_id"  bson:"restaurant_id"` // Added this to link to the restaurant
+	RestaurantID string        `json:"restaurant_id"  bson:"restaurant_id"`
 	Name         string        `json:"name"           bson:"name"          validate:"required,min=2,max=100"`
 	Description  string        `json:"description"    bson:"description"   validate:"omitempty,max=500"`
 	Image        string        `json:"image"          bson:"image"         validate:"omitempty,url"`
 	Price        float64       `json:"price"          bson:"price"         validate:"required"`
-	IsAvailable  bool          `json:"is_available"   bson:"is_available"  validate:"required"` // Removed oneof=true false as booleans are natively true/false
+	IsAvailable  bool          `json:"is_available"   bson:"is_available"  validate:"required"`
 	CreatedAt    time.Time     `json:"created_at"     bson:"created_at"`
 	UpdatedAt    time.Time     `json:"updated_at"     bson:"updated_at"`
 }
@@ -69,4 +69,25 @@ type UpdateMenuItemRequest struct {
 	Image       *string  `json:"image"         validate:"omitempty,url"`
 	Price       *float64 `json:"price"`
 	IsAvailable *bool    `json:"is_available"`
+}
+
+type CartRequest struct {
+	UserID       string `json:"-"` // We fill this from the token, not the JSON body
+	RestaurantID string `json:"restaurantId" validate:"required"`
+	ItemID       string `json:"itemId" validate:"required"`
+}
+
+type Cart struct {
+	ID           bson.ObjectID `json:"id" bson:"_id,omitempty"`
+	UserID       string        `json:"userId" bson:"user_id"`
+	RestaurantID string        `json:"restaurantId" bson:"restaurant_id"`
+	ItemID       string        `json:"itemId" bson:"item_id"`
+	Quantity     int           `json:"quantity" bson:"quantity"`
+	CreatedAt    time.Time     `json:"created_at" bson:"created_at"`
+	UpdatedAt    time.Time     `json:"updated_at" bson:"updated_at"`
+}
+
+type CartUpdateRequest struct {
+	ItemID string `json:"itemId" validate:"required"`
+	Action string `json:"action" validate:"required,oneof=inc dec"` // Must be "inc" or "dec"
 }
