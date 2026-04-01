@@ -16,6 +16,7 @@ type Config struct {
 	TokenSymmetricKey   string        `mapstructure:"TOKEN_SYMMETRIC_KEY"`
 	AccessTokenDuration time.Duration `mapstructure:"ACCESS_TOKEN_DURATION"`
 	UtilsServiceURL     string        `mapstructure:"UTILS_SERVICE_URL"`
+	StripeSecretKey     string        `mapstructure:"STRIPE_SECRET_KEY"`
 }
 
 func LoadConfig() (config Config, err error) {

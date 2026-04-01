@@ -30,8 +30,13 @@ func (s *Server) setupRoutes() {
 	addressService := services.NewAddressService(addressRepository)
 	addressHandler := handlers.NewAddressHandler(addressService)
 
+	orderRepository := repositories.NewOrderRepository(s.client, s.cfg.DBName, "orders")
+	orderService := services.NewOrderService(orderRepository, cartService, menuService, s.cfg.StripeSecretKey)
+	orderHandler := handlers.NewOrderHandler(orderService)
+
 	// Health check can remain entirely public so your infrastructure (like AWS/Docker) can ping it
 	s.router.Get("/api/restaurant/health", restaurantHandler.CheckHealth)
+	s.router.Post("/api/webhook/stripe", orderHandler.StripeWebhook)
 
 	// ==========================================
 	// TIER 1: AUTHENTICATED ROUTES (Everyone)
@@ -52,6 +57,8 @@ func (s *Server) setupRoutes() {
 		r.Post("/api/address", addressHandler.AddAddress)
 		r.Get("/api/address", addressHandler.GetMyAddresses)
 		r.Delete("/api/address/{id}", addressHandler.DeleteAddress)
+		r.Post("/api/order", orderHandler.CreateOrder)
+		r.Post("/api/order/{id}/create-payment-session", orderHandler.CreatePaymentSession)
 
 		// ==========================================
 		// TIER 2: SELLER ROUTES (Owners Only)

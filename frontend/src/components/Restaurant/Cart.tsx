@@ -1,12 +1,13 @@
 import { useCart } from "@/context/useCart";
 import { restaurantServiceUrl } from "@/lib/config";
 import axios from "axios";
-import { Minus, Plus, ShoppingBag, Trash2, Loader2 } from "lucide-react"; // ✅ Import Loader2
+import { Minus, Plus, ShoppingBag, Trash2, Loader2 } from "lucide-react";
 import toast from "react-hot-toast";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom"; // ✅ Imported useNavigate
 
 export default function Cart() {
   const { cartItems, subtotal, fetchCart, isCartLoading } = useCart();
+  const navigate = useNavigate(); // ✅ Initialized navigate
 
   const handleUpdateQuantity = async (
     itemId: string,
@@ -68,7 +69,7 @@ export default function Cart() {
     );
   }
 
-  // Get the restaurant info from the first item (since they are all from the same restaurant)
+  // Get the restaurant info from the first item
   const restaurant = cartItems[0].restaurantId;
 
   return (
@@ -122,7 +123,7 @@ export default function Cart() {
                   <p className="text-gray-500 mt-1">₹{cartItem.itemId.price}</p>
                 </div>
 
-                {/* Quantity Controls (Matching your image!) */}
+                {/* Quantity Controls */}
                 <div className="flex items-center gap-4 ml-4">
                   <button
                     onClick={() =>
@@ -177,6 +178,7 @@ export default function Cart() {
 
             <button
               disabled={!restaurant.is_open}
+              onClick={() => navigate("/address")} // ✅ Added the onClick routing
               className={`w-full font-bold py-4 rounded-xl transition shadow-md mt-6 ${
                 restaurant.is_open
                   ? "bg-red-500 text-white hover:bg-red-600 shadow-red-200"

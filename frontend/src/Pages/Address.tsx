@@ -9,9 +9,9 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
 import L from "leaflet";
-import { Crosshair, Loader2, Plus, Trash2, MapPin, Phone } from "lucide-react"; // ✅ Switched to Lucide
+import { Crosshair, Loader2, Plus, Trash2, MapPin, Phone } from "lucide-react";
 
-import { restaurantServiceUrl } from "@/lib/config"; // ✅ Using your config
+import { restaurantServiceUrl } from "@/lib/config";
 
 // 🔧 Fix leaflet marker icon issue
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -81,6 +81,9 @@ export default function AddAddressPage() {
   const [adding, setAdding] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
+  // ✅ NEW: State for checkout processing
+  const [processingId, setProcessingId] = useState<string | null>(null);
+
   // 📋 Form state
   const [mobile, setMobile] = useState("");
   const [formattedAddress, setFormattedAddress] = useState("");
@@ -113,7 +116,6 @@ export default function AddAddressPage() {
         withCredentials: true,
       });
 
-      // ✅ THE FIX: Unwrap both the Axios 'data' and the Go 'data' wrappers!
       const fetchedAddresses =
         res.data?.data?.addresses || res.data?.addresses || [];
 
@@ -142,7 +144,6 @@ export default function AddAddressPage() {
     }
     try {
       setAdding(true);
-      // ✅ Send exactly what the Go AddressRequest struct expects
       await axios.post(
         `${restaurantServiceUrl}/address`,
         {
@@ -185,6 +186,44 @@ export default function AddAddressPage() {
     }
   };
 
+  // 💳 NEW: Handle Checkout Flow
+  const handleCheckout = async (addressId: string) => {
+    try {
+      setProcessingId(addressId);
+
+      // 1. Create the Order
+      const orderRes = await axios.post(
+        `${restaurantServiceUrl}/order`,
+        { address_id: addressId },
+        { withCredentials: true },
+      );
+
+      // Navigate down your Go response structure
+      const orderId =
+        orderRes.data?.data?.order?.id || orderRes.data?.order?.id;
+      if (!orderId) throw new Error("Failed to draft order");
+
+      // 2. Get the Stripe Checkout URL
+      const stripeRes = await axios.post(
+        `${restaurantServiceUrl}/order/${orderId}/create-payment-session`,
+        {},
+        { withCredentials: true },
+      );
+
+      const checkoutUrl = stripeRes.data?.data?.url || stripeRes.data?.url;
+      if (!checkoutUrl) throw new Error("Failed to get payment link");
+
+      // 3. Redirect the user to Stripe!
+      window.location.href = checkoutUrl;
+    } catch (error: any) {
+      console.error("Checkout Error:", error);
+      toast.error(
+        error.response?.data?.error || "Checkout failed. Please try again.",
+      );
+      setProcessingId(null);
+    }
+  };
+
   // Ensure leaflet CSS is loaded
   useEffect(() => {
     const link = document.createElement("link");
@@ -206,7 +245,7 @@ export default function AddAddressPage() {
             {/* 🗺 Map (Fixed height) */}
             <div className="relative h-[300px] w-full overflow-hidden rounded-xl border border-gray-200 z-0">
               <MapContainer
-                center={[latitude || 26.9124, longitude || 75.7873]} // Default Jaipur
+                center={[latitude || 26.9124, longitude || 75.7873]}
                 zoom={13}
                 className="h-full w-full"
                 style={{ height: "100%", width: "100%" }}
@@ -235,7 +274,7 @@ export default function AddAddressPage() {
             <div className="relative">
               <Phone className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
               <input
-                type="tel" // Go accepts strings, so tel is better than number
+                type="tel"
                 placeholder="Mobile number"
                 value={mobile}
                 onChange={(e) => setMobile(e.target.value)}
@@ -278,8 +317,8 @@ export default function AddAddressPage() {
             <div className="space-y-3">
               {addresses.map((addr) => (
                 <div
-                  key={addr.id} // ✅ Using id instead of _id
-                  className="flex items-start justify-between rounded-xl border border-gray-100 bg-white p-4 shadow-sm hover:shadow-md transition"
+                  key={addr.id}
+                  className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 rounded-xl border border-gray-100 bg-white p-4 shadow-sm hover:shadow-md transition"
                 >
                   <div className="flex-1 pr-4">
                     <p className="text-sm font-medium text-gray-900 leading-snug">
@@ -289,17 +328,35 @@ export default function AddAddressPage() {
                       <Phone className="w-3 h-3" /> {addr.mobile}
                     </p>
                   </div>
-                  <button
-                    onClick={() => deleteAddress(addr.id)}
-                    disabled={deletingId === addr.id}
-                    className="rounded-lg p-2 text-red-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-50 transition shrink-0"
-                  >
-                    {deletingId === addr.id ? (
-                      <Loader2 size={18} className="animate-spin" />
-                    ) : (
-                      <Trash2 size={18} />
-                    )}
-                  </button>
+
+                  {/* Action Buttons Container */}
+                  <div className="flex items-center gap-2 w-full sm:w-auto">
+                    {/* 💳 NEW: Deliver Here & Pay Button */}
+                    <button
+                      onClick={() => handleCheckout(addr.id)}
+                      disabled={processingId !== null}
+                      className="flex-1 sm:flex-none bg-green-500 text-white px-4 py-2 rounded-lg font-bold text-sm hover:bg-green-600 transition disabled:opacity-50 flex items-center justify-center gap-2"
+                    >
+                      {processingId === addr.id ? (
+                        <Loader2 size={16} className="animate-spin" />
+                      ) : (
+                        "Deliver Here & Pay"
+                      )}
+                    </button>
+
+                    {/* 🗑 Existing Delete Button */}
+                    <button
+                      onClick={() => deleteAddress(addr.id)}
+                      disabled={deletingId === addr.id || processingId !== null}
+                      className="rounded-lg p-2 text-red-400 border border-red-100 hover:bg-red-50 hover:text-red-600 disabled:opacity-50 transition shrink-0"
+                    >
+                      {deletingId === addr.id ? (
+                        <Loader2 size={18} className="animate-spin" />
+                      ) : (
+                        <Trash2 size={18} />
+                      )}
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
