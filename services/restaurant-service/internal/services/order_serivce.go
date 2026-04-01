@@ -1,9 +1,12 @@
 package services
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"log"
+	"net/http"
 
 	"github.com/stripe/stripe-go/v78"
 	"github.com/stripe/stripe-go/v78/checkout/session"
@@ -149,4 +152,63 @@ func (s *OrderService) CreateStripeSession(ctx context.Context, orderID string, 
 func (s *OrderService) ProcessPaymentSuccess(ctx context.Context, orderID string) (*models.Order, error) {
 	log.Println("Processing successful payment for Order:", orderID)
 	return s.repo.MarkOrderAsPaid(ctx, orderID)
+}
+
+func (s *OrderService) NotifyRestaurant(order *models.Order) {
+	// 1. Prepare the payload we want to send to the dashboard
+	payload := map[string]interface{}{
+		"restaurant_id": order.RestaurantID,
+		"order_id":      order.ID.Hex(),
+		"items":         order.Items,
+		"grand_total":   order.GrandTotal,
+		"status":        order.Status,
+		"message":       "New Order Received!",
+	}
+
+	jsonData, _ := json.Marshal(payload)
+
+	// 2. Create the HTTP request to your realtime-service
+	req, err := http.NewRequest("POST", "http://localhost:8003/api/internal/notify-order", bytes.NewBuffer(jsonData))
+	if err != nil {
+		log.Println("Failed to create internal request:", err)
+		return
+	}
+
+	// 3. Attach the VIP Internal Key
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Internal-Key", "super_secret_zomato_internal_key_2026")
+
+	// 4. Fire the request in the background
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Println("Failed to notify realtime service:", err)
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		log.Printf("Realtime service returned status: %d", resp.StatusCode)
+	} else {
+		log.Println("✅ Successfully notified Realtime Service about Order:", order.ID.Hex())
+	}
+}
+
+func (s *OrderService) UpdateOrderStatus(ctx context.Context, orderID string, restaurantID string, newStatus string) error {
+	// First, verify this order actually belongs to this restaurant!
+	order, err := s.repo.GetOrderByID(ctx, orderID)
+	if err != nil {
+		return err
+	}
+
+	if order.RestaurantID != restaurantID {
+		return errors.New("unauthorized: order does not belong to your restaurant")
+	}
+
+	return s.repo.UpdateOrderStatus(ctx, orderID, newStatus)
+}
+
+// Add to bottom of order_service.go
+func (s *OrderService) GetActiveOrders(ctx context.Context, restaurantID string) ([]models.Order, error) {
+	return s.repo.GetActiveOrdersByRestaurant(ctx, restaurantID)
 }

@@ -78,6 +78,9 @@ func (s *Server) setupRoutes() {
 			ownerRouter.Get("/api/menu/{id}", menuHandler.GetMenuItem)
 			ownerRouter.Put("/api/menu/{id}", menuHandler.UpdateMenuItem)
 			ownerRouter.Delete("/api/menu/{id}", menuHandler.DeleteMenuItem)
+
+			r.Patch("/api/order/{id}/status", orderHandler.UpdateOrderStatus)
+			r.Get("/api/restaurant/{id}/orders/active", orderHandler.GetActiveOrders)
 		})
 	})
 }

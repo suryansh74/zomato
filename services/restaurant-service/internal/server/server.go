@@ -39,7 +39,7 @@ func (s *Server) Start() {
 	// 2. attach cors
 	s.router.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   []string{"http://localhost:5173"},
-		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Content-Type", "Authorization"},
 		ExposedHeaders:   []string{"Link"},
 		AllowCredentials: true,
@@ -50,6 +50,6 @@ func (s *Server) Start() {
 
 	// 3. start server
 	addr := fmt.Sprintf("%s:%s", s.cfg.Host, s.cfg.Port)
-	fmt.Println("auth-service running on", addr)
+	fmt.Println("restaurant-service running on", addr)
 	http.ListenAndServe(addr, s.router)
 }

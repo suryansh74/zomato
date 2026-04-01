@@ -1,0 +1,26 @@
+package config
+
+import (
+	"fmt"
+
+	"github.com/spf13/viper"
+)
+
+type Config struct {
+	Host string `mapstructure:"SERVER_HOST"`
+	Port string `mapstructure:"SERVER_PORT"`
+}
+
+func LoadConfig() (config Config, err error) {
+	viper.SetConfigName(".env")
+	viper.SetConfigType("env")
+	viper.AddConfigPath(".")
+	viper.AutomaticEnv()
+
+	if err = viper.ReadInConfig(); err != nil {
+		return config, fmt.Errorf("failed to read config: %w", err)
+	}
+
+	err = viper.Unmarshal(&config)
+	return config, err
+}

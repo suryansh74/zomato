@@ -1,8 +1,9 @@
-go 1.25.0
+go 1.26.1
 
 use (
 	./auth-service
+	./restaurant-service
 	./shared
 	./utils-service
-	./restaurant-service
+	./realtime-service
 )

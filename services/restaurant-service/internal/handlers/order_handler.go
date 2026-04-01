@@ -99,14 +99,68 @@ func (h *OrderHandler) StripeWebhook(w http.ResponseWriter, r *http.Request) {
 
 		orderID := session.Metadata["order_id"]
 		log.Println("🔔 Stripe Webhook Received: Payment Success for Order:", orderID)
-
-		_, err = h.orderSrv.ProcessPaymentSuccess(r.Context(), orderID)
+		updatedOrder, err := h.orderSrv.ProcessPaymentSuccess(r.Context(), orderID)
 		if err != nil {
 			log.Println("Error marking order as paid:", err)
+		} else {
+			// ✅ TRIGGER THE REALTIME NOTIFICATION IN THE BACKGROUND
+			go h.orderSrv.NotifyRestaurant(updatedOrder)
 		}
 
 		// TODO: This is where you will add RabbitMQ publishing later!
 	}
 
 	w.WriteHeader(http.StatusOK)
+}
+
+func (h *OrderHandler) UpdateOrderStatus(w http.ResponseWriter, r *http.Request) {
+	// Grab the logged-in user (who should be a restaurant owner)
+	payload := r.Context().Value(middleware.UserContextKey).(*token.Payload)
+	println(payload.User.ID)
+	// For now, we assume their User ID is tied to the Restaurant ID,
+	// or they pass the Restaurant ID. Let's extract orderID and status.
+
+	orderID := chi.URLParam(r, "id")
+
+	var reqBody struct {
+		Status       string `json:"status"`
+		RestaurantID string `json:"restaurant_id"` // They will send this from the dashboard
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
+		helper.WriteJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid request body"})
+		return
+	}
+
+	err := h.orderSrv.UpdateOrderStatus(r.Context(), orderID, reqBody.RestaurantID, reqBody.Status)
+	if err != nil {
+		helper.WriteJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
+
+	// TODO LATER: Trigger Realtime Service to notify the CUSTOMER here!
+
+	helper.WriteJSON(w, http.StatusOK, map[string]string{
+		"message": "Order status updated to " + reqBody.Status,
+	})
+}
+
+// Add to bottom of order_handler.go
+func (h *OrderHandler) GetActiveOrders(w http.ResponseWriter, r *http.Request) {
+	restaurantID := chi.URLParam(r, "id")
+
+	orders, err := h.orderSrv.GetActiveOrders(r.Context(), restaurantID)
+	if err != nil {
+		helper.WriteJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
+
+	// Ensure we return an empty array instead of null if there are no orders
+	if orders == nil {
+		orders = []models.Order{}
+	}
+
+	helper.WriteJSON(w, http.StatusOK, map[string]interface{}{
+		"orders": orders,
+	})
 }

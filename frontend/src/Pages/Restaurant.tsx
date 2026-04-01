@@ -1,6 +1,8 @@
 // Restaurant.tsx — Page component
 import { useState, useEffect, useCallback } from "react";
 import axios from "axios";
+import { Link } from "react-router-dom"; // ✅ Added Link
+import { MonitorPlay } from "lucide-react"; // ✅ Added Icon
 import { restaurantServiceUrl } from "@/lib/config";
 import type { Restaurant as RestaurantType } from "@/types/types";
 import MyRestaurant from "@/components/Restaurant/MyRestaurant";
@@ -16,12 +18,11 @@ export default function Restaurant() {
     try {
       setLoading(true);
       setError(null);
+      // ✅ Using YOUR correct endpoint to prevent the 404
       const res = await axios.get(`${restaurantServiceUrl}/restaurant/read`, {
         withCredentials: true,
       });
-      // Normalize: handle both { data: Restaurant } and direct Restaurant
       const data: RestaurantType = res.data?.data ?? res.data;
-      console.log("[Restaurant] fetched:", data); // ← keep until confirmed working
       setRestaurant(data);
     } catch (err) {
       if (axios.isAxiosError(err)) {
@@ -107,7 +108,18 @@ export default function Restaurant() {
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4">
-      {/* Pass the restaurant and NO onRefresh — MyRestaurant manages its own state */}
+      {/* ✅ NEW: Dashboard Button injected right above your existing UI */}
+      <div className="max-w-4xl mx-auto mb-6 flex justify-end">
+        <Link
+          to="/restaurant/dashboard"
+          className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-xl font-bold transition shadow-md animate-in fade-in slide-in-from-top-4"
+        >
+          <MonitorPlay className="w-5 h-5" />
+          Open Live Kitchen Dashboard
+        </Link>
+      </div>
+
+      {/* Your existing MyRestaurant component */}
       <MyRestaurant restaurant={restaurant} />
     </div>
   );
